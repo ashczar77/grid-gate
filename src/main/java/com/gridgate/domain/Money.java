@@ -13,6 +13,7 @@ public record Money(BigDecimal amount, String currencyCode) {
     public Money {
         Objects.requireNonNull(amount, "amount");
         Objects.requireNonNull(currencyCode, "currencyCode");
+        amount = amount.stripTrailingZeros();
         if (amount.signum() < 0) {
             throw new IllegalArgumentException("amount must be >= 0");
         }

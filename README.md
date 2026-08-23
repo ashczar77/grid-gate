@@ -21,7 +21,7 @@ You submit a run (deadline, budget, provider list) while you have connectivity. 
 
 ## Status
 
-Phase 1 in progress: scaffold, domain model, and cascade success rules.
+Phase 1 complete: scaffold, domain model, cascade logic, and CALL-E recipient schema.
 
 ## Quick start
 

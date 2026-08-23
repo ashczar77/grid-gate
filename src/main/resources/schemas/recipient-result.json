@@ -1,0 +1,55 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "provider_name",
+    "can_service",
+    "operating_during_load_shedding",
+    "spoken_evidence",
+    "commitment_made",
+    "disposition"
+  ],
+  "properties": {
+    "provider_name": {
+      "type": "string"
+    },
+    "can_service": {
+      "type": "string",
+      "enum": ["yes", "no", "unknown"]
+    },
+    "operating_during_load_shedding": {
+      "type": "string",
+      "enum": ["yes", "no", "unknown"]
+    },
+    "price_amount": {
+      "type": ["number", "null"]
+    },
+    "currency": {
+      "type": ["string", "null"]
+    },
+    "eta_minutes": {
+      "type": ["integer", "null"]
+    },
+    "delivery_cutoff_spoken": {
+      "type": ["string", "null"]
+    },
+    "spoken_evidence": {
+      "type": "string"
+    },
+    "commitment_made": {
+      "type": "string",
+      "enum": ["none", "hold_only", "booking"]
+    },
+    "disposition": {
+      "type": "string",
+      "enum": [
+        "success",
+        "rejected",
+        "unreachable",
+        "refused",
+        "voicemail",
+        "ambiguous"
+      ]
+    }
+  }
+}
