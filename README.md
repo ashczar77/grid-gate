@@ -6,6 +6,12 @@ GridGate calls providers one at a time when outages make it unclear who is still
 
 Built for the [CALL-E: Your Code Is Calling](https://call-e.devpost.com/) hackathon.
 
+## How it works during outages
+
+GridGate runs on cloud infrastructure, not on your home laptop. CALL-E places the calls from its platform too. Load shedding at your house is the problem GridGate helps with, not a reason the service stops.
+
+You submit a run (deadline, budget, provider list) while you have connectivity. That can be before the slot, over mobile data when Wi‑Fi is down, or from a scheduled job. GridGate calls each provider and asks whether they can still operate during the outage window. Many businesses answer from backup power. GridGate stops at the first firm yes within budget and returns the quote and what they said on the call.
+
 ## Stack
 
 - Java 21
@@ -15,7 +21,7 @@ Built for the [CALL-E: Your Code Is Calling](https://call-e.devpost.com/) hackat
 
 ## Status
 
-Phase 1 in progress: project scaffold and domain model (run, provider attempts, money/currency support).
+Phase 1 in progress: scaffold, domain model, and cascade success rules.
 
 ## Quick start
 
