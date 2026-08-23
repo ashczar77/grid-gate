@@ -1,0 +1,28 @@
+# Local Cursor config (rules, not for public repo)
+.cursor/
+
+# Java / Maven (for upcoming GridGate scaffold)
+target/
+*.class
+*.jar
+*.war
+*.iml
+.idea/
+.project
+.classpath
+.settings/
+.factorypath
+
+# Env and secrets
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs and local DB
+*.log
+*.h2.db
+data/
