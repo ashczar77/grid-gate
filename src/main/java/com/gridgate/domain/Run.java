@@ -82,6 +82,41 @@ public class Run {
                 now);
     }
 
+    public static Run restore(
+            UUID id,
+            int stage,
+            String area,
+            String need,
+            ZonedDateTime deadline,
+            Money budget,
+            boolean dryRun,
+            List<ProviderSpec> providers,
+            List<ProviderAttempt> attempts,
+            RunStatus status,
+            int nextProviderIndex,
+            String winnerProviderId,
+            Instant createdAt,
+            Instant updatedAt) {
+        Run run = new Run(
+                id,
+                stage,
+                area,
+                need,
+                deadline,
+                budget,
+                dryRun,
+                providers,
+                createdAt);
+        if (attempts != null) {
+            run.attempts.addAll(attempts);
+        }
+        run.status = Objects.requireNonNull(status, "status");
+        run.nextProviderIndex = nextProviderIndex;
+        run.winnerProviderId = winnerProviderId;
+        run.updatedAt = Objects.requireNonNull(updatedAt, "updatedAt");
+        return run;
+    }
+
     public UUID getId() {
         return id;
     }

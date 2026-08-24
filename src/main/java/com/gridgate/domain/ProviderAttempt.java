@@ -94,4 +94,22 @@ public class ProviderAttempt {
     public Optional<Instant> getCompletedAt() {
         return Optional.ofNullable(completedAt);
     }
+
+    public static ProviderAttempt restore(
+            UUID id,
+            String providerId,
+            String providerName,
+            String phoneE164,
+            int sequenceIndex,
+            String calleCallId,
+            ProviderResult result,
+            Instant startedAt,
+            Instant completedAt) {
+        ProviderAttempt attempt = new ProviderAttempt(id, providerId, providerName, phoneE164, sequenceIndex);
+        attempt.calleCallId = calleCallId;
+        attempt.result = result;
+        attempt.startedAt = startedAt;
+        attempt.completedAt = completedAt;
+        return attempt;
+    }
 }
