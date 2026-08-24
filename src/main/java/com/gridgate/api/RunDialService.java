@@ -101,8 +101,6 @@ public class RunDialService {
         return saved;
     }
 
-    // ── Exceptions ────────────────────────────────────────────────────────────
-
     public static final class RunNotFoundException extends RuntimeException {
         private final UUID runId;
 

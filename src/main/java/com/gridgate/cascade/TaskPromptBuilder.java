@@ -10,12 +10,12 @@ import java.util.Objects;
  *
  * <p>Prompt rules (locked):
  * <ol>
- *   <li>AI disclosure first — caller must identify as AI.</li>
+ *   <li>AI disclosure first: caller must identify as AI.</li>
  *   <li>State the Eskom load-shedding Stage N and suburb.</li>
  *   <li>State the service need and deadline clearly.</li>
  *   <li>Quote the budget ceiling; never discuss auto-booking or payment.</li>
  *   <li>Ask only: "Can you service during load-shedding? What is your price?"</li>
- *   <li>No guessing — if unclear, say unknown.</li>
+ *   <li>No guessing: if unclear, say unknown.</li>
  * </ol>
  */
 public final class TaskPromptBuilder {
@@ -57,7 +57,7 @@ public final class TaskPromptBuilder {
                 3. What is your estimated price (must be within %s)?
 
                 Guidelines:
-                - If any answer is unclear or unknown, record it as unknown — do not guess.
+                - If any answer is unclear or unknown, record it as unknown. Do not guess.
                 - Do NOT make or imply any booking or payment commitment.
                 - End the call politely once all questions are answered.
                 """.formatted(

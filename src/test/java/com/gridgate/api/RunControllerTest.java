@@ -270,11 +270,11 @@ class RunControllerTest {
         RunResponse created = objectMapper.readValue(
                 createResult.getResponse().getContentAsString(), RunResponse.class);
 
-        // First arm — succeeds
+        // First arm: succeeds
         mockMvc.perform(post("/api/runs/" + created.id() + "/live"))
                 .andExpect(status().isAccepted());
 
-        // Second arm — conflict: run is now RUNNING, not PLAN_READY
+        // Second arm: conflict because run is now RUNNING, not PLAN_READY
         mockMvc.perform(post("/api/runs/" + created.id() + "/live"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error", is("run_not_ready")))

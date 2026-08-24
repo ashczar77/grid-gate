@@ -85,7 +85,7 @@ public class RunController {
      * Arms the run: transitions it from {@code PLAN_READY} to {@code RUNNING}
      * by firing the first CALL-E provider dial.
      *
-     * <p>Returns {@code 202 Accepted} immediately — the call result arrives later via webhook.
+     * <p>Returns {@code 202 Accepted} immediately. The call result arrives later via webhook.
      */
     @PostMapping("/{id}/live")
     public ResponseEntity<?> armLive(@PathVariable UUID id) {
