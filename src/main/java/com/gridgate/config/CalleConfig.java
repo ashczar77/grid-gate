@@ -19,7 +19,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class CalleConfig {
 
     @Bean
-    WebClient calleApiWebClient(CalleProperties properties, WebClient.Builder builder) {
+    public WebClient calleApiWebClient(CalleProperties properties, WebClient.Builder builder) {
         ObjectMapper snakeCaseMapper = JsonMapper.builder()
                 .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
                 .build();
