@@ -42,6 +42,23 @@ class RunTest {
     }
 
     @Test
+    void cancelTransitionsToCancelled() {
+        Run run = sampleRun(true);
+        run.cancel(java.time.Instant.parse("2026-08-23T12:00:00Z"));
+
+        assertEquals(RunStatus.CANCELLED, run.getStatus());
+    }
+
+    @Test
+    void cancelRejectsFulfilledOrExhaustedRun() {
+        Run run = sampleRun(false);
+        java.time.Instant now = java.time.Instant.parse("2026-08-23T12:00:00Z");
+        run.markFulfilled("genhire-jhb", now);
+
+        assertThrows(IllegalStateException.class, () -> run.cancel(now));
+    }
+
+    @Test
     void rejectsEmptyProviderList() {
         assertThrows(IllegalArgumentException.class, () -> Run.create(
                 6,

@@ -286,4 +286,93 @@ class RunControllerTest {
         mockMvc.perform(post("/api/runs/" + UUID.randomUUID() + "/live"))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void cancelRunTransitionsStatusToCancelled() throws Exception {
+        String payload = """
+                {
+                  "stage": 4,
+                  "area": "Centurion",
+                  "need": "Borehole pump repair",
+                  "deadline": "2026-08-25T14:00:00+02:00",
+                  "budget_amount": 3000.00,
+                  "budget_currency": "ZAR",
+                  "dry_run": true,
+                  "providers": [
+                    {
+                      "id": "pump1",
+                      "name": "Centurion Pump Specialists",
+                      "phone_e164": "+14155550107"
+                    }
+                  ]
+                }
+                """;
+
+        MvcResult createResult = mockMvc.perform(post("/api/runs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        RunResponse created = objectMapper.readValue(
+                createResult.getResponse().getContentAsString(), RunResponse.class);
+
+        // Cancel the run
+        mockMvc.perform(post("/api/runs/" + created.id() + "/cancel"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(created.id().toString())))
+                .andExpect(jsonPath("$.status", is("CANCELLED")));
+
+        // Verify fetching the run returns CANCELLED
+        mockMvc.perform(get("/api/runs/" + created.id()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("CANCELLED")));
+    }
+
+    @Test
+    void cancelRunIsIdempotent() throws Exception {
+        String payload = """
+                {
+                  "stage": 2,
+                  "area": "Pretoria East",
+                  "need": "Solar inverter check",
+                  "deadline": "2026-08-25T16:00:00+02:00",
+                  "budget_amount": 1500.00,
+                  "budget_currency": "ZAR",
+                  "dry_run": true,
+                  "providers": [
+                    {
+                      "id": "solar1",
+                      "name": "Capital Solar",
+                      "phone_e164": "+14155550108"
+                    }
+                  ]
+                }
+                """;
+
+        MvcResult createResult = mockMvc.perform(post("/api/runs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        RunResponse created = objectMapper.readValue(
+                createResult.getResponse().getContentAsString(), RunResponse.class);
+
+        // First cancel
+        mockMvc.perform(post("/api/runs/" + created.id() + "/cancel"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("CANCELLED")));
+
+        // Second cancel: idempotent
+        mockMvc.perform(post("/api/runs/" + created.id() + "/cancel"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("CANCELLED")));
+    }
+
+    @Test
+    void cancelRunReturns404ForUnknownId() throws Exception {
+        mockMvc.perform(post("/api/runs/" + UUID.randomUUID() + "/cancel"))
+                .andExpect(status().isNotFound());
+    }
 }

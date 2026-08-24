@@ -218,6 +218,9 @@ public class Run {
     }
 
     public void cancel(Instant now) {
+        if (status == RunStatus.FULFILLED || status == RunStatus.EXHAUSTED) {
+            throw new IllegalStateException("Cannot cancel run that is already " + status);
+        }
         this.status = RunStatus.CANCELLED;
         touch(now);
     }

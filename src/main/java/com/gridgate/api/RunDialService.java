@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,11 +73,30 @@ public class RunDialService {
 
         Instant now = Instant.now();
         run.armLive(now);
+        dialNext(run, now);
 
-        ProviderAttempt attempt = orchestrator.startNextDial(run, now)
-                .orElseThrow(() -> new IllegalStateException(
-                        "Orchestrator returned no attempt for PLAN_READY run " + runId));
+        Run saved = ledger.save(run);
+        log.info("Run {} transitioned to {}", runId, saved.getStatus());
+        return saved;
+    }
 
+    /**
+     * Dials the next provider in sequence for an active run.
+     *
+     * @param run the active run to advance
+     * @param now current timestamp
+     * @return the newly created and started {@link ProviderAttempt}, or empty if no dials started
+     */
+    public Optional<ProviderAttempt> dialNext(Run run, Instant now) {
+        Objects.requireNonNull(run, "run");
+        Objects.requireNonNull(now, "now");
+
+        Optional<ProviderAttempt> attemptOpt = orchestrator.startNextDial(run, now);
+        if (attemptOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        ProviderAttempt attempt = attemptOpt.get();
         ProviderSpec spec = run.getProviders().get(attempt.getSequenceIndex());
         String idempotencyKey = IdempotencyKeys.forAttempt(run.getId(), spec.id());
         String prompt = TaskPromptBuilder.build(run, spec);
@@ -90,15 +110,11 @@ public class RunDialService {
                 webhookUrl);
 
         log.info("Dialling provider '{}' for run {} (idempotencyKey={})",
-                spec.id(), runId, idempotencyKey);
+                spec.id(), run.getId(), idempotencyKey);
 
         var callResponse = calleClient.createCall(callRequest, idempotencyKey);
         attempt.markStarted(callResponse.id(), now);
-
-        Run saved = ledger.save(run);
-        log.info("Run {} transitioned to {} after dialling provider '{}'",
-                runId, saved.getStatus(), spec.id());
-        return saved;
+        return Optional.of(attempt);
     }
 
     public static final class RunNotFoundException extends RuntimeException {

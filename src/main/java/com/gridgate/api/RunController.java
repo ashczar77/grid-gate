@@ -7,9 +7,11 @@ import com.gridgate.api.dto.RunResponse;
 import com.gridgate.domain.Money;
 import com.gridgate.domain.ProviderSpec;
 import com.gridgate.domain.Run;
+import com.gridgate.domain.RunStatus;
 import com.gridgate.ledger.RunLedger;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -101,5 +103,28 @@ public class RunController {
                             "message", ex.getMessage(),
                             "current_status", ex.getCurrentStatus().name()));
         }
+    }
+
+    /**
+     * Cancels a run: transitions it to {@code CANCELLED} to stop further dials.
+     */
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelRun(@PathVariable UUID id) {
+        return ledger.findById(id)
+                .map(run -> {
+                    if (run.getStatus() == RunStatus.FULFILLED || run.getStatus() == RunStatus.EXHAUSTED) {
+                        return ResponseEntity.status(409)
+                                .body(Map.of(
+                                        "error", "cannot_cancel",
+                                        "message", "Cannot cancel run with terminal status " + run.getStatus(),
+                                        "current_status", run.getStatus().name()));
+                    }
+                    if (run.getStatus() != RunStatus.CANCELLED) {
+                        run.cancel(Instant.now());
+                        ledger.save(run);
+                    }
+                    return ResponseEntity.ok(RunResponse.fromDomain(run));
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
