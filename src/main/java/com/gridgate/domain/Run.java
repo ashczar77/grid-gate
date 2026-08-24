@@ -20,7 +20,7 @@ public class Run {
     private final String need;
     private final ZonedDateTime deadline;
     private final Money budget;
-    private final boolean dryRun;
+    private boolean dryRun;
     private final List<ProviderSpec> providers;
     private final List<ProviderAttempt> attempts;
     private final Instant createdAt;
@@ -219,6 +219,19 @@ public class Run {
 
     public void cancel(Instant now) {
         this.status = RunStatus.CANCELLED;
+        touch(now);
+    }
+
+    /**
+     * Arms a PLAN_READY dry-run for live dialing.
+     */
+    public void armLive(Instant now) {
+        if (status != RunStatus.PLAN_READY) {
+            throw new IllegalStateException(
+                    "Only runs in PLAN_READY status can be armed for live execution (current status: " + status + ")");
+        }
+        this.dryRun = false;
+        this.status = RunStatus.PENDING;
         touch(now);
     }
 
