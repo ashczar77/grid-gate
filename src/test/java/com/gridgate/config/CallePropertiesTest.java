@@ -12,6 +12,8 @@ class CallePropertiesTest {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of())
+            .withBean(org.springframework.web.reactive.function.client.WebClient.Builder.class, () ->
+                    org.springframework.web.reactive.function.client.WebClient.builder())
             .withUserConfiguration(CalleConfig.class);
 
     @Test
