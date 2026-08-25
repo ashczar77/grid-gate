@@ -1,0 +1,59 @@
+{
+  "stage": 6,
+  "area": "Sandton",
+  "need": "Emergency generator diesel refill and inverter switchover",
+  "deadline": "2026-08-25T20:00:00+02:00",
+  "budget_amount": 1800.00,
+  "budget_currency": "ZAR",
+  "dry_run": true,
+  "providers": [
+    {
+      "id": "prov-fastspark",
+      "name": "FastSpark Electrical",
+      "phone_e164": "+14155550101",
+      "simulated_result": {
+        "can_service": "no",
+        "operating_during_load_shedding": "no",
+        "price_amount": null,
+        "currency": null,
+        "eta_minutes": null,
+        "delivery_cutoff_spoken": null,
+        "spoken_evidence": "Sorry, our workshop is down during Stage 6 load-shedding and we cannot dispatch technicians.",
+        "commitment_made": "none",
+        "disposition": "rejected"
+      }
+    },
+    {
+      "id": "prov-poweron",
+      "name": "PowerOn 24/7 Mobile",
+      "phone_e164": "+14155550102",
+      "simulated_result": {
+        "can_service": "unknown",
+        "operating_during_load_shedding": "unknown",
+        "price_amount": null,
+        "currency": null,
+        "eta_minutes": null,
+        "delivery_cutoff_spoken": null,
+        "spoken_evidence": "Call reached voicemail after 4 rings.",
+        "commitment_made": "none",
+        "disposition": "unreachable"
+      }
+    },
+    {
+      "id": "prov-sandton-inverter",
+      "name": "Sandton Inverter Care",
+      "phone_e164": "+14155550103",
+      "simulated_result": {
+        "can_service": "yes",
+        "operating_during_load_shedding": "yes",
+        "price_amount": 1450.00,
+        "currency": "ZAR",
+        "eta_minutes": 30,
+        "delivery_cutoff_spoken": "Within 45 minutes",
+        "spoken_evidence": "Yes, we are equipped with battery-backed mobile units and can be on site in 30 minutes for R1450.",
+        "commitment_made": "none",
+        "disposition": "success"
+      }
+    }
+  ]
+}

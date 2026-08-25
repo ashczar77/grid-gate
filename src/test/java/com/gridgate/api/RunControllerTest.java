@@ -416,4 +416,20 @@ class RunControllerTest {
         mockMvc.perform(get("/api/runs/" + UUID.randomUUID() + "/events"))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void simulateRunExecutesExampleDryRunCascade() throws Exception {
+        mockMvc.perform(post("/api/runs/simulate"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id", notNullValue()))
+                .andExpect(jsonPath("$.stage", is(6)))
+                .andExpect(jsonPath("$.area", is("Sandton")))
+                .andExpect(jsonPath("$.status", is("FULFILLED")))
+                .andExpect(jsonPath("$.winner_provider_id", is("prov-sandton-inverter")))
+                .andExpect(jsonPath("$.providers", hasSize(3)))
+                .andExpect(jsonPath("$.attempts", hasSize(3)))
+                .andExpect(jsonPath("$.attempts[0].result.outcome", is("REJECTED")))
+                .andExpect(jsonPath("$.attempts[1].result.outcome", is("UNREACHABLE")))
+                .andExpect(jsonPath("$.attempts[2].result.outcome", is("SUCCESS")));
+    }
 }

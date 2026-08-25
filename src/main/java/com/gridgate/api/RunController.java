@@ -4,6 +4,7 @@ import com.gridgate.api.RunDialService.RunNotFoundException;
 import com.gridgate.api.RunDialService.RunNotReadyException;
 import com.gridgate.api.dto.CreateRunRequest;
 import com.gridgate.api.dto.RunResponse;
+import com.gridgate.cascade.RunSimulator;
 import com.gridgate.domain.Money;
 import com.gridgate.domain.ProviderSpec;
 import com.gridgate.domain.Run;
@@ -34,16 +35,19 @@ public class RunController {
     private final RunLedger ledger;
     private final RunDialService dialService;
     private final RunEventHub eventHub;
+    private final RunSimulator simulator;
     private final boolean defaultDryRun;
 
     public RunController(
             RunLedger ledger,
             RunDialService dialService,
             RunEventHub eventHub,
+            RunSimulator simulator,
             @Value("${gridgate.dry-run-default:true}") boolean defaultDryRun) {
         this.ledger = Objects.requireNonNull(ledger, "ledger");
         this.dialService = Objects.requireNonNull(dialService, "dialService");
         this.eventHub = Objects.requireNonNull(eventHub, "eventHub");
+        this.simulator = Objects.requireNonNull(simulator, "simulator");
         this.defaultDryRun = defaultDryRun;
     }
 
@@ -71,6 +75,14 @@ public class RunController {
         return ResponseEntity
                 .created(URI.create("/api/runs/" + saved.getId()))
                 .body(RunResponse.fromDomain(saved));
+    }
+
+    @PostMapping("/simulate")
+    public ResponseEntity<RunResponse> simulateRun() {
+        Run run = simulator.executeSimulation();
+        return ResponseEntity
+                .created(URI.create("/api/runs/" + run.getId()))
+                .body(RunResponse.fromDomain(run));
     }
 
     @GetMapping("/{id}")
