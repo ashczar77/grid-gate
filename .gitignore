@@ -30,3 +30,7 @@ data/
 # Local design assets
 docs/assets/reference_site_1.webp
 
+# Demo script
+docs/demo-script.md
+
+
