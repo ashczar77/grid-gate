@@ -4,6 +4,8 @@ An AI phone agent that finds available providers when unreliable power makes nor
 
 ![GridGate Web UI](docs/assets/grid-gate-screenshot.png)
 
+![GridGate Active Cascade & Results](docs/assets/grid-gate-screenshot-2.png)
+
 GridGate calls providers one at a time when outages make it unclear who is still operating. You set a deadline, budget, and list of numbers. GridGate uses CALL-E to place the calls, stops at the first provider that can help, and returns structured results you can act on. Dry-run mode is on by default; live calls require an explicit second step.
 
 Built for the [CALL-E: Your Code Is Calling](https://call-e.devpost.com/) hackathon.

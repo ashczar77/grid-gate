@@ -21,6 +21,15 @@ function setupEventListeners() {
   document.getElementById('btn-simulate-offline').addEventListener('click', handleSimulate);
   document.getElementById('btn-arm-live').addEventListener('click', handleArmLive);
   document.getElementById('btn-cancel-run').addEventListener('click', handleCancelRun);
+
+  document.querySelectorAll('.chip-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const needText = btn.getAttribute('data-need');
+      if (needText) {
+        document.getElementById('need').value = needText;
+      }
+    });
+  });
 }
 
 function addProviderRow(id = '', name = '', phone = '') {

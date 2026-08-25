@@ -76,7 +76,14 @@
 
           <div class="form-group">
             <label for="need">Emergency Service Need</label>
-            <input type="text" id="need" value="Emergency generator diesel refill and inverter switchover" placeholder="Describe the urgent requirement" required>
+            <textarea id="need" rows="3" placeholder="Describe the equipment, fuel quantity, or urgent requirement" required>Emergency generator diesel refill (20L) and inverter switchover</textarea>
+            <div class="field-hint">Include details (e.g. generator kVA, phase, fuel liters) so the AI assistant can answer provider clarifying questions.</div>
+            <div class="preset-chips">
+              <span class="preset-label">Quick Presets:</span>
+              <button type="button" class="chip-btn" data-need="Emergency generator diesel refill (20L) and inverter switchover">Generator Fuel</button>
+              <button type="button" class="chip-btn" data-need="5.5kVA petrol generator spark plug replacement and battery diagnosis">Generator Repair</button>
+              <button type="button" class="chip-btn" data-need="Solar lithium inverter backup switchover and error code clearance">Inverter &amp; Solar</button>
+            </div>
           </div>
 
           <div class="form-row">
