@@ -26,3 +26,7 @@ Thumbs.db
 *.log
 *.h2.db
 data/
+
+# Local design assets
+docs/assets/reference_site_1.webp
+

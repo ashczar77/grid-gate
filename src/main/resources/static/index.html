@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GridGate - Load-Shedding Provider Cascade powered by CALL-E</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Top Navigation -->
+    <header>
+      <nav class="nav-bar">
+        <div class="brand-group">
+          <div class="logo-badge">GridGate</div>
+          <div>
+            <div class="brand-title">GridGate</div>
+            <div class="brand-subtitle">Load-Shedding Provider Cascade &bull; CALL-E</div>
+          </div>
+        </div>
+        <div class="nav-actions">
+          <button id="btn-fill-example" class="btn btn-secondary btn-sm" type="button">
+            Fill Example Data
+          </button>
+          <button id="btn-simulate-offline" class="btn btn-primary btn-sm" type="button">
+            Run Offline Simulation
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Hero Introduction -->
+    <section class="hero-section">
+      <div class="hero-tag">Automated Phone Dispatch</div>
+      <h1 class="hero-title">Find Available Providers During Power Outages</h1>
+      <p class="hero-desc">
+        An AI phone agent that finds available providers when unreliable power makes normal booking impossible, powered by CALL-E. Set your criteria, verify masked numbers in dry-run mode, and arm sequential calls with a single click.
+      </p>
+    </section>
+
+    <!-- Main 2-Column Workbench -->
+    <main class="main-grid">
+      <!-- Left Column: Configure Cascade -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>1. Configure Cascade Run</span>
+          </div>
+          <span class="badge badge-plan-ready">Gate 1: Dry-Run</span>
+        </div>
+
+        <form id="cascade-form" onsubmit="return false;">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="stage">Eskom Stage</label>
+              <select id="stage">
+                <option value="1">Stage 1</option>
+                <option value="2">Stage 2</option>
+                <option value="3">Stage 3</option>
+                <option value="4">Stage 4</option>
+                <option value="5">Stage 5</option>
+                <option value="6" selected>Stage 6</option>
+                <option value="7">Stage 7</option>
+                <option value="8">Stage 8</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="area">Suburb / Area</label>
+              <input type="text" id="area" value="Sandton" placeholder="e.g. Sandton, Midrand" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="need">Emergency Service Need</label>
+            <input type="text" id="need" value="Emergency generator diesel refill and inverter switchover" placeholder="Describe the urgent requirement" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="deadline">Need By (Deadline)</label>
+              <input type="datetime-local" id="deadline" required>
+            </div>
+
+            <div class="form-group">
+              <label for="budget_amount">Budget Ceiling</label>
+              <div style="display: grid; grid-template-columns: 1fr 90px; gap: 10px;">
+                <input type="number" id="budget_amount" value="1800.00" step="10.00" min="0" required>
+                <input type="text" id="budget_currency" value="ZAR" readonly style="text-align: center; font-weight: 700; color: var(--accent-fuchsia);">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <label style="margin-bottom: 0;">Providers to Call (In Order)</label>
+              <button id="btn-add-provider" class="btn btn-secondary btn-sm" type="button">+ Add Provider</button>
+            </div>
+            <div id="providers-container">
+              <div class="provider-row">
+                <input type="text" class="prov-id" placeholder="ID" value="prov-fastspark">
+                <input type="text" class="prov-name" placeholder="Provider Name" value="FastSpark Electrical">
+                <input type="text" class="prov-phone" placeholder="+1..." value="+14155550101">
+                <button type="button" class="remove-btn" title="Remove">&times;</button>
+              </div>
+              <div class="provider-row">
+                <input type="text" class="prov-id" placeholder="ID" value="prov-poweron">
+                <input type="text" class="prov-name" placeholder="Provider Name" value="PowerOn 24/7 Mobile">
+                <input type="text" class="prov-phone" placeholder="+1..." value="+14155550102">
+                <button type="button" class="remove-btn" title="Remove">&times;</button>
+              </div>
+              <div class="provider-row">
+                <input type="text" class="prov-id" placeholder="ID" value="prov-sandton-inverter">
+                <input type="text" class="prov-name" placeholder="Provider Name" value="Sandton Inverter Care">
+                <input type="text" class="prov-phone" placeholder="+1..." value="+14155550103">
+                <button type="button" class="remove-btn" title="Remove">&times;</button>
+              </div>
+            </div>
+          </div>
+
+          <button id="btn-create-plan" class="btn btn-primary btn-lg" type="button" style="margin-top: 8px;">
+            Create Dry-Run Plan
+          </button>
+        </form>
+      </section>
+
+      <!-- Right Column: Dry-Run Plan & Cascade Progress -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>2. Dry-Run Plan &amp; Cascade</span>
+          </div>
+          <span id="run-status-badge" class="badge badge-cancelled">No Active Run</span>
+        </div>
+
+        <div id="empty-state" class="empty-state">
+          <div class="empty-state-icon">&#9889;</div>
+          <p style="font-weight: 700; font-size: 16px; margin-bottom: 6px; color: var(--text-primary);">No Cascade Active</p>
+          <p style="font-size: 13px; color: var(--text-secondary); max-width: 420px; margin: 0 auto;">
+            Configure parameters on the left or click <strong>Fill Example Data</strong> &amp; <strong>Create Dry-Run Plan</strong> to inspect the sequential dial list before providing live consent.
+          </p>
+        </div>
+
+        <div id="run-view" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <div style="font-size: 12px; font-family: var(--font-mono); color: var(--text-secondary);">
+              Run ID: <span id="run-id-display" style="color: var(--accent-fuchsia); font-weight: 600;"></span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button id="btn-arm-live" class="btn btn-primary btn-sm" type="button" style="display: none;">
+                Arm Live Calls (Consent)
+              </button>
+              <button id="btn-cancel-run" class="btn btn-danger btn-sm" type="button" style="display: none;">
+                Cancel Run
+              </button>
+            </div>
+          </div>
+
+          <div id="run-notice" class="notice-box" style="display: none;"></div>
+
+          <div id="winner-container" style="display: none;"></div>
+
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); margin-top: 18px; margin-bottom: 8px;">
+            Cascade Sequence
+          </div>
+          <div id="attempts-list" class="attempt-list"></div>
+
+          <details>
+            <summary>Raw JSON Run Ledger</summary>
+            <pre id="raw-json">{}</pre>
+          </details>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
