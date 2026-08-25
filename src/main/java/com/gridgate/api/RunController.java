@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/api/runs")
@@ -31,14 +33,17 @@ public class RunController {
 
     private final RunLedger ledger;
     private final RunDialService dialService;
+    private final RunEventHub eventHub;
     private final boolean defaultDryRun;
 
     public RunController(
             RunLedger ledger,
             RunDialService dialService,
+            RunEventHub eventHub,
             @Value("${gridgate.dry-run-default:true}") boolean defaultDryRun) {
         this.ledger = Objects.requireNonNull(ledger, "ledger");
         this.dialService = Objects.requireNonNull(dialService, "dialService");
+        this.eventHub = Objects.requireNonNull(eventHub, "eventHub");
         this.defaultDryRun = defaultDryRun;
     }
 
@@ -75,6 +80,13 @@ public class RunController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping(value = "/{id}/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<SseEmitter> streamRunEvents(@PathVariable UUID id) {
+        return ledger.findById(id)
+                .map(run -> ResponseEntity.ok(eventHub.subscribe(id, run)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @GetMapping
     public ResponseEntity<List<RunResponse>> listRuns() {
         List<RunResponse> runs = ledger.findAll().stream()
@@ -93,6 +105,7 @@ public class RunController {
     public ResponseEntity<?> armLive(@PathVariable UUID id) {
         try {
             Run run = dialService.armAndDial(id);
+            eventHub.publishUpdate(run);
             return ResponseEntity.accepted().body(RunResponse.fromDomain(run));
         } catch (RunNotFoundException ex) {
             return ResponseEntity.notFound().build();
@@ -122,6 +135,7 @@ public class RunController {
                     if (run.getStatus() != RunStatus.CANCELLED) {
                         run.cancel(Instant.now());
                         ledger.save(run);
+                        eventHub.publishUpdate(run);
                     }
                     return ResponseEntity.ok(RunResponse.fromDomain(run));
                 })

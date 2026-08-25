@@ -375,4 +375,45 @@ class RunControllerTest {
         mockMvc.perform(post("/api/runs/" + UUID.randomUUID() + "/cancel"))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void streamRunEventsReturnsSseStream() throws Exception {
+        String payload = """
+                {
+                  "stage": 1,
+                  "area": "Sandton",
+                  "need": "Security gate battery backup",
+                  "deadline": "2026-08-25T15:00:00+02:00",
+                  "budget_amount": 900.00,
+                  "budget_currency": "ZAR",
+                  "dry_run": true,
+                  "providers": [
+                    {
+                      "id": "gate1",
+                      "name": "GatePro",
+                      "phone_e164": "+14155550109"
+                    }
+                  ]
+                }
+                """;
+
+        MvcResult createResult = mockMvc.perform(post("/api/runs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        RunResponse created = objectMapper.readValue(
+                createResult.getResponse().getContentAsString(), RunResponse.class);
+
+        // Connect to SSE stream
+        mockMvc.perform(get("/api/runs/" + created.id() + "/events"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void streamRunEventsReturns404ForUnknownId() throws Exception {
+        mockMvc.perform(get("/api/runs/" + UUID.randomUUID() + "/events"))
+                .andExpect(status().isNotFound());
+    }
 }

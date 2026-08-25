@@ -42,16 +42,19 @@ public class WebhookController {
     private final RunDialService dialService;
     private final CascadeOrchestrator orchestrator;
     private final ProcessedWebhookEventRepository eventRepository;
+    private final RunEventHub eventHub;
 
     public WebhookController(
             RunLedger ledger,
             RunDialService dialService,
             CascadeOrchestrator orchestrator,
-            ProcessedWebhookEventRepository eventRepository) {
+            ProcessedWebhookEventRepository eventRepository,
+            RunEventHub eventHub) {
         this.ledger = Objects.requireNonNull(ledger, "ledger");
         this.dialService = Objects.requireNonNull(dialService, "dialService");
         this.orchestrator = Objects.requireNonNull(orchestrator, "orchestrator");
         this.eventRepository = Objects.requireNonNull(eventRepository, "eventRepository");
+        this.eventHub = Objects.requireNonNull(eventHub, "eventHub");
     }
 
     @PostMapping
@@ -99,6 +102,7 @@ public class WebhookController {
             if (!attempt.isComplete()) {
                 attempt.complete(result, now);
                 ledger.save(run);
+                eventHub.publishUpdate(run);
             }
             eventRepository.save(new ProcessedWebhookEventEntity(eventId, now));
             return ResponseEntity.ok(Map.of(
@@ -114,6 +118,7 @@ public class WebhookController {
 
         ledger.save(run);
         eventRepository.save(new ProcessedWebhookEventEntity(eventId, now));
+        eventHub.publishUpdate(run);
 
         log.info("Webhook processed for run {} (step={}, status={})",
                 run.getId(), step, run.getStatus());
