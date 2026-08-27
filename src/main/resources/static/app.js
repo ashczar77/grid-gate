@@ -22,6 +22,17 @@ function setupEventListeners() {
   document.getElementById('btn-arm-live').addEventListener('click', handleArmLive);
   document.getElementById('btn-cancel-run').addEventListener('click', handleCancelRun);
 
+  // Event delegation for all remove buttons (initial and dynamic)
+  document.getElementById('providers-container').addEventListener('click', (e) => {
+    const removeBtn = e.target.closest('.remove-btn');
+    if (removeBtn) {
+      const row = removeBtn.closest('.provider-row');
+      if (row) {
+        row.remove();
+      }
+    }
+  });
+
   document.querySelectorAll('.chip-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const needText = btn.getAttribute('data-need');
@@ -30,6 +41,21 @@ function setupEventListeners() {
       }
     });
   });
+}
+
+function handleRemoveRow(btn) {
+  const row = btn.closest('.provider-row');
+  if (!row) return;
+  const nameInput = row.querySelector('.prov-name');
+  const name = nameInput && nameInput.value.trim() ? nameInput.value.trim() : 'this provider';
+  const totalRows = document.querySelectorAll('.provider-row').length;
+  if (totalRows <= 1) {
+    alert('At least one provider is required for the cascade.');
+    return;
+  }
+  if (confirm(`Remove "${name}" from the dial list?`)) {
+    row.remove();
+  }
 }
 
 function addProviderRow(id = '', name = '', phone = '') {
@@ -41,9 +67,8 @@ function addProviderRow(id = '', name = '', phone = '') {
     <input type="text" class="prov-id" placeholder="ID" value="${id || 'p' + index}">
     <input type="text" class="prov-name" placeholder="Provider Name" value="${name}">
     <input type="text" class="prov-phone" placeholder="+1..." value="${phone}">
-    <button type="button" class="remove-btn" title="Remove">&times;</button>
+    <button type="button" class="remove-btn" title="Remove" onclick="handleRemoveRow(this)">&times;</button>
   `;
-  row.querySelector('.remove-btn').addEventListener('click', () => row.remove());
   container.appendChild(row);
 }
 
@@ -93,12 +118,38 @@ function getFormData() {
   };
 }
 
+let loggedEvents = new Set();
+
+function addActivityLog(message, type = '', dedupeKey = null) {
+  if (dedupeKey) {
+    if (loggedEvents.has(dedupeKey)) return;
+    loggedEvents.add(dedupeKey);
+  }
+  const box = document.getElementById('live-activity-box');
+  const list = document.getElementById('activity-log-lines');
+  if (box && list) {
+    box.style.display = 'block';
+    const timeStr = new Date().toLocaleTimeString();
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${type}`;
+    entry.innerHTML = `<span class="log-time">[${timeStr}]</span> ${message}`;
+    list.appendChild(entry);
+    list.scrollTop = list.scrollHeight;
+  }
+}
+
 async function handleCreatePlan() {
   const payload = getFormData();
   if (payload.providers.length === 0) {
     alert('Please specify at least one provider.');
     return;
   }
+
+  // Clear previous log lines and keys
+  loggedEvents.clear();
+  const list = document.getElementById('activity-log-lines');
+  if (list) list.innerHTML = '';
+  addActivityLog('Creating Gate 1 dry-run plan...', 'highlight');
 
   try {
     const res = await fetch('/api/runs', {
@@ -109,20 +160,28 @@ async function handleCreatePlan() {
 
     if (!res.ok) {
       const err = await res.json();
+      addActivityLog(`Error creating plan: ${JSON.stringify(err)}`, 'error');
       alert('Error creating plan: ' + JSON.stringify(err));
       return;
     }
 
     const run = await res.json();
     currentRunId = run.id;
+    addActivityLog(`Gate 1 Plan ready (${run.id.slice(0, 8)}). Masked numbers verified. Zero calls placed.`, 'success', `plan_ready_${run.id}`);
     renderRun(run);
     subscribeSse(run.id);
   } catch (e) {
+    addActivityLog(`Network error: ${e.message}`, 'error');
     alert('Network error creating plan: ' + e.message);
   }
 }
 
 async function handleSimulate() {
+  loggedEvents.clear();
+  const list = document.getElementById('activity-log-lines');
+  if (list) list.innerHTML = '';
+  addActivityLog('Starting offline simulation cascade...', 'highlight');
+
   try {
     const res = await fetch('/api/runs/simulate', {
       method: 'POST'
@@ -130,6 +189,7 @@ async function handleSimulate() {
 
     if (!res.ok) {
       const err = await res.json();
+      addActivityLog(`Simulation error: ${JSON.stringify(err)}`, 'error');
       alert('Simulation error: ' + JSON.stringify(err));
       return;
     }
@@ -139,6 +199,7 @@ async function handleSimulate() {
     renderRun(run);
     subscribeSse(run.id);
   } catch (e) {
+    addActivityLog(`Simulation error: ${e.message}`, 'error');
     alert('Network error starting simulation: ' + e.message);
   }
 }
@@ -150,6 +211,14 @@ async function handleArmLive() {
     return;
   }
 
+  const armBtn = document.getElementById('btn-arm-live');
+  if (armBtn) {
+    armBtn.disabled = true;
+    armBtn.innerHTML = '<span class="pulse-dot"></span> Calling via CALL-E...';
+  }
+
+  addActivityLog('Gate 2 Consent granted. Sending dispatch request to CALL-E API...', 'highlight', `arm_req_${currentRunId}`);
+
   try {
     const res = await fetch(`/api/runs/${currentRunId}/live`, {
       method: 'POST'
@@ -157,19 +226,60 @@ async function handleArmLive() {
 
     if (!res.ok) {
       const err = await res.json();
-      alert('Error arming run: ' + (err.message || JSON.stringify(err)));
+      const errorMsg = err.message || JSON.stringify(err);
+      addActivityLog(`Failed to arm live call: ${errorMsg}`, 'error');
+      alert('Error arming run: ' + errorMsg);
+      if (armBtn) {
+        armBtn.disabled = false;
+        armBtn.innerHTML = 'Arm Live Calls (Consent)';
+      }
       return;
     }
 
     const run = await res.json();
+    addActivityLog('CALL-E call dispatched! Connecting to telecom network...', 'success', `dispatched_${run.id}`);
     renderRun(run);
+    startSyncPolling(run.id);
   } catch (e) {
+    addActivityLog(`Network error arming run: ${e.message}`, 'error');
     alert('Network error arming run: ' + e.message);
+    if (armBtn) {
+      armBtn.disabled = false;
+      armBtn.innerHTML = 'Arm Live Calls (Consent)';
+    }
   }
+}
+
+let syncInterval = null;
+
+function startSyncPolling(runId) {
+  if (syncInterval) clearInterval(syncInterval);
+  syncInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`/api/runs/${runId}/sync`, { method: 'POST' });
+      if (res.ok) {
+        const run = await res.json();
+        renderRun(run);
+        if (run.status !== 'RUNNING' && run.status !== 'PENDING') {
+          clearInterval(syncInterval);
+          syncInterval = null;
+        }
+      }
+    } catch (e) {
+      // Ignore background sync network glitches
+    }
+  }, 4000);
 }
 
 async function handleCancelRun() {
   if (!currentRunId) return;
+
+  if (syncInterval) {
+    clearInterval(syncInterval);
+    syncInterval = null;
+  }
+
+  addActivityLog('Sending cancellation request...', 'highlight');
 
   try {
     const res = await fetch(`/api/runs/${currentRunId}/cancel`, {
@@ -178,13 +288,16 @@ async function handleCancelRun() {
 
     if (!res.ok) {
       const err = await res.json();
+      addActivityLog(`Error cancelling: ${JSON.stringify(err)}`, 'error');
       alert('Error cancelling run: ' + JSON.stringify(err));
       return;
     }
 
     const run = await res.json();
+    addActivityLog('Run cancelled. Remaining providers skipped.', 'error', `cancel_ack_${run.id}`);
     renderRun(run);
   } catch (e) {
+    addActivityLog(`Network error: ${e.message}`, 'error');
     alert('Network error cancelling run: ' + e.message);
   }
 }
@@ -199,6 +312,14 @@ function subscribeSse(runId) {
     try {
       const run = JSON.parse(event.data);
       renderRun(run);
+      if (run.status === 'RUNNING') {
+        startSyncPolling(run.id);
+      } else if (run.status !== 'PENDING') {
+        if (syncInterval) {
+          clearInterval(syncInterval);
+          syncInterval = null;
+        }
+      }
     } catch (e) {
       console.error('Failed to parse SSE run_update payload', e);
     }
@@ -215,6 +336,34 @@ function renderRun(run) {
 
   document.getElementById('run-id-display').textContent = run.id;
   document.getElementById('raw-json').textContent = JSON.stringify(run, null, 2);
+
+  // Deduplicated Activity Logging
+  if (run.status === 'RUNNING') {
+    const activeAttempt = run.attempts.find(a => !a.completed_at && a.started_at);
+    if (activeAttempt) {
+      addActivityLog(`Calling ${activeAttempt.provider_name} (${activeAttempt.masked_phone})...`, 'highlight', `dial_${activeAttempt.id}`);
+    }
+  } else if (run.status === 'FULFILLED') {
+    const winnerProv = run.providers.find(p => p.id === run.winner_provider_id);
+    const winnerName = winnerProv ? winnerProv.name : run.winner_provider_id;
+    addActivityLog(`Winner confirmed: ${winnerName}! Cascade fulfilled.`, 'success', `winner_${run.id}`);
+  } else if (run.status === 'EXHAUSTED') {
+    addActivityLog('All providers completed. None could fulfill need within parameters.', 'error', `exhausted_${run.id}`);
+  } else if (run.status === 'CANCELLED') {
+    addActivityLog('Cascade run cancelled.', 'error', `cancelled_${run.id}`);
+  }
+
+  if (run.attempts) {
+    run.attempts.forEach(att => {
+      if (att.completed_at && att.result) {
+        const key = `att_done_${att.id}`;
+        const outcome = att.result.outcome || 'COMPLETED';
+        const isSuccess = outcome === 'SUCCESS';
+        const evidence = att.result.spoken_evidence ? ` — "${att.result.spoken_evidence}"` : '';
+        addActivityLog(`Call finished for ${att.provider_name}: ${outcome}${evidence}`, isSuccess ? 'success' : 'error', key);
+      }
+    });
+  }
 
   // Status Badge
   const statusBadge = document.getElementById('run-status-badge');

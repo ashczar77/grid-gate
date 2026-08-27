@@ -22,16 +22,16 @@
       "enum": ["yes", "no", "unknown"]
     },
     "price_amount": {
-      "type": ["number", "null"]
+      "type": "number"
     },
     "currency": {
-      "type": ["string", "null"]
+      "type": "string"
     },
     "eta_minutes": {
-      "type": ["integer", "null"]
+      "type": "integer"
     },
     "delivery_cutoff_spoken": {
-      "type": ["string", "null"]
+      "type": "string"
     },
     "spoken_evidence": {
       "type": "string"

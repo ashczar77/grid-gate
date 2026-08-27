@@ -123,10 +123,21 @@ public class RunController {
             return ResponseEntity.notFound().build();
         } catch (RunNotReadyException ex) {
             return ResponseEntity.status(409)
-                    .body(Map.of(
-                            "error", "run_not_ready",
-                            "message", ex.getMessage(),
-                            "current_status", ex.getCurrentStatus().name()));
+                .body(Map.of(
+                    "error", "run_not_ready",
+                    "message", ex.getMessage(),
+                    "current_status", ex.getCurrentStatus().name()));
+        }
+    }
+
+    @PostMapping("/{id}/sync")
+    public ResponseEntity<?> syncRun(@PathVariable UUID id) {
+        try {
+            Run run = dialService.syncRun(id, Instant.now());
+            eventHub.publishUpdate(run);
+            return ResponseEntity.ok(RunResponse.fromDomain(run));
+        } catch (RunNotFoundException ex) {
+            return ResponseEntity.notFound().build();
         }
     }
 

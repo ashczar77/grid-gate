@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/app.css">
+  <link rel="stylesheet" href="/app.css?v=5">
 </head>
 <body>
   <div class="container">
@@ -69,8 +69,8 @@
             </div>
 
             <div class="form-group">
-              <label for="area">Suburb / Area</label>
-              <input type="text" id="area" value="Sandton" placeholder="e.g. Sandton, Midrand" required>
+              <label for="area">Delivery Address / Suburb</label>
+              <input type="text" id="area" value="124 Rivonia Road, Sandton" placeholder="e.g. 124 Rivonia Road, Sandton" required>
             </div>
           </div>
 
@@ -106,24 +106,30 @@
               <label style="margin-bottom: 0;">Providers to Call (In Order)</label>
               <button id="btn-add-provider" class="btn btn-secondary btn-sm" type="button">+ Add Provider</button>
             </div>
+            <div class="provider-header-row">
+              <span>ID</span>
+              <span>Provider Name</span>
+              <span>Phone (E.164)</span>
+              <span></span>
+            </div>
             <div id="providers-container">
               <div class="provider-row">
                 <input type="text" class="prov-id" placeholder="ID" value="prov-fastspark">
                 <input type="text" class="prov-name" placeholder="Provider Name" value="FastSpark Electrical">
                 <input type="text" class="prov-phone" placeholder="+1..." value="+14155550101">
-                <button type="button" class="remove-btn" title="Remove">&times;</button>
+                <button type="button" class="remove-btn" title="Remove" onclick="handleRemoveRow(this)">&times;</button>
               </div>
               <div class="provider-row">
                 <input type="text" class="prov-id" placeholder="ID" value="prov-poweron">
                 <input type="text" class="prov-name" placeholder="Provider Name" value="PowerOn 24/7 Mobile">
                 <input type="text" class="prov-phone" placeholder="+1..." value="+14155550102">
-                <button type="button" class="remove-btn" title="Remove">&times;</button>
+                <button type="button" class="remove-btn" title="Remove" onclick="handleRemoveRow(this)">&times;</button>
               </div>
               <div class="provider-row">
                 <input type="text" class="prov-id" placeholder="ID" value="prov-sandton-inverter">
                 <input type="text" class="prov-name" placeholder="Provider Name" value="Sandton Inverter Care">
                 <input type="text" class="prov-phone" placeholder="+1..." value="+14155550103">
-                <button type="button" class="remove-btn" title="Remove">&times;</button>
+                <button type="button" class="remove-btn" title="Remove" onclick="handleRemoveRow(this)">&times;</button>
               </div>
             </div>
           </div>
@@ -168,6 +174,14 @@
 
           <div id="run-notice" class="notice-box" style="display: none;"></div>
 
+          <div id="live-activity-box" class="activity-log-box" style="display: none;">
+            <div class="activity-log-header">
+              <span class="pulse-dot"></span>
+              <span>Live System Activity</span>
+            </div>
+            <div id="activity-log-lines" class="activity-log-lines"></div>
+          </div>
+
           <div id="winner-container" style="display: none;"></div>
 
           <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); margin-top: 18px; margin-bottom: 8px;">
@@ -184,6 +198,6 @@
     </main>
   </div>
 
-  <script src="/app.js"></script>
+  <script src="/app.js?v=7"></script>
 </body>
 </html>

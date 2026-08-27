@@ -44,15 +44,16 @@ public final class TaskPromptBuilder {
                 IMPORTANT: You are an AI assistant calling on behalf of a customer. \
                 Identify yourself as an AI at the very start of the call.
 
-                You are calling %s on behalf of a customer in %s who needs urgent assistance \
+                You are calling %s on behalf of a customer at %s who needs urgent assistance \
                 during Eskom load-shedding Stage %d.
 
                 SERVICE NEEDED: %s
+                LOCATION / ADDRESS: %s
                 DEADLINE: %s
                 BUDGET CEILING: %s (no auto-booking; do not commit to any payment)
 
                 Ask the following questions only:
-                1. Can you service this need during Eskom load-shedding Stage %d in %s?
+                1. Can you service this need at %s during Eskom load-shedding Stage %d?
                 2. Can you be available before %s?
                 3. What is your estimated price (must be within %s)?
 
@@ -65,10 +66,11 @@ public final class TaskPromptBuilder {
                 run.getArea(),
                 run.getStage(),
                 run.getNeed(),
+                run.getArea(),
                 deadline,
                 budget,
-                run.getStage(),
                 run.getArea(),
+                run.getStage(),
                 deadline,
                 budget);
     }
