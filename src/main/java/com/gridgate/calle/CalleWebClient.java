@@ -3,7 +3,6 @@ package com.gridgate.calle;
 import com.gridgate.calle.dto.CallTaskResponse;
 import com.gridgate.calle.dto.CreateCallRequest;
 import java.util.Objects;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;

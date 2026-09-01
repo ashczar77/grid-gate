@@ -11,7 +11,6 @@ import com.gridgate.domain.RunStatus;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
