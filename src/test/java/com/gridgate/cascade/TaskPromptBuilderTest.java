@@ -62,6 +62,24 @@ class TaskPromptBuilderTest {
     }
 
     @Test
+    void sanitizesControlCharactersAndNewlinesInSingleLineFields() {
+        ProviderSpec messySpec = new ProviderSpec("prov-1", "FastSpark\n\rElectrical\t", "+14155550101");
+        Run messyRun = Run.create(
+                6,
+                "Sandton\r\nArea",
+                "Emergency need\u0000with null byte",
+                ZonedDateTime.parse("2026-08-25T18:00:00+02:00"),
+                Money.of(1500, "ZAR"),
+                true,
+                List.of(messySpec));
+
+        String prompt = TaskPromptBuilder.build(messyRun, messySpec);
+        assertTrue(prompt.contains("FastSpark  Electrical"));
+        assertTrue(prompt.contains("Sandton  Area"));
+        assertTrue(!prompt.contains("\u0000"));
+    }
+
+    @Test
     void rejectsNullArguments() {
         assertThrows(NullPointerException.class, () -> TaskPromptBuilder.build(null, spec));
         assertThrows(NullPointerException.class, () -> TaskPromptBuilder.build(run, null));

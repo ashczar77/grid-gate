@@ -28,6 +28,11 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.gridgate.config.CalleProperties;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
+
 /**
  * Handles incoming terminal webhook callbacks from CALL-E.
  * Deduplicates by CALL-E-Event-Id before advancing the cascade sequentially.
@@ -43,24 +48,44 @@ public class WebhookController {
     private final CascadeOrchestrator orchestrator;
     private final ProcessedWebhookEventRepository eventRepository;
     private final RunEventHub eventHub;
+    private final CalleProperties properties;
 
     public WebhookController(
             RunLedger ledger,
             RunDialService dialService,
             CascadeOrchestrator orchestrator,
             ProcessedWebhookEventRepository eventRepository,
-            RunEventHub eventHub) {
+            RunEventHub eventHub,
+            CalleProperties properties) {
         this.ledger = Objects.requireNonNull(ledger, "ledger");
         this.dialService = Objects.requireNonNull(dialService, "dialService");
         this.orchestrator = Objects.requireNonNull(orchestrator, "orchestrator");
         this.eventRepository = Objects.requireNonNull(eventRepository, "eventRepository");
         this.eventHub = Objects.requireNonNull(eventHub, "eventHub");
+        this.properties = Objects.requireNonNull(properties, "properties");
     }
 
     @PostMapping
+    @Transactional
     public ResponseEntity<?> handleWebhook(
             @RequestHeader(value = "CALL-E-Event-Id", required = false) String eventIdHeader,
+            @RequestHeader(value = "X-CALL-E-Signature", required = false) String signatureHeader,
+            @RequestHeader(value = "X-Webhook-Secret", required = false) String secretHeader,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
             @RequestBody WebhookEvent event) {
+
+        if (properties.hasWebhookSecret()) {
+            String expectedSecret = properties.webhookSecret();
+            boolean authorized = (secretHeader != null && secretHeader.trim().equals(expectedSecret))
+                    || (signatureHeader != null && signatureHeader.trim().equals(expectedSecret))
+                    || (authHeader != null && authHeader.trim().equals("Bearer " + expectedSecret));
+
+            if (!authorized) {
+                log.warn("Unauthorized webhook request rejected: missing or invalid secret/signature header");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "unauthorized", "message", "Invalid or missing webhook signature"));
+            }
+        }
 
         String eventId = resolveEventId(eventIdHeader, event);
         if (eventId == null || eventId.isBlank()) {
@@ -117,8 +142,16 @@ public class WebhookController {
         }
 
         ledger.save(run);
-        eventRepository.save(new ProcessedWebhookEventEntity(eventId, now));
         eventHub.publishUpdate(run);
+
+        try {
+            eventRepository.save(new ProcessedWebhookEventEntity(eventId, now));
+        } catch (DataIntegrityViolationException ex) {
+            log.info("Concurrent duplicate webhook event caught: {}", eventId);
+            return ResponseEntity.ok(Map.of(
+                    "status", "duplicate_ignored",
+                    "event_id", eventId));
+        }
 
         log.info("Webhook processed for run {} (step={}, status={})",
                 run.getId(), step, run.getStatus());

@@ -18,18 +18,7 @@ public class RunMapper {
 
         RunEntity entity = new RunEntity();
         entity.setId(run.getId());
-        entity.setStage(run.getStage());
-        entity.setArea(run.getArea());
-        entity.setNeed(run.getNeed());
-        entity.setDeadline(run.getDeadline());
-        entity.setBudgetAmount(run.getBudget().amount());
-        entity.setBudgetCurrency(run.getBudget().currencyCode());
-        entity.setDryRun(run.isDryRun());
-        entity.setStatus(run.getStatus());
-        entity.setNextProviderIndex(run.getNextProviderIndex());
-        entity.setWinnerProviderId(run.getWinnerProviderId().orElse(null));
         entity.setCreatedAt(run.getCreatedAt());
-        entity.setUpdatedAt(run.getUpdatedAt());
 
         List<ProviderSpecEntity> providerEntities = new ArrayList<>();
         List<ProviderSpec> providers = run.getProviders();
@@ -44,13 +33,74 @@ public class RunMapper {
         }
         entity.setProviders(providerEntities);
 
-        List<ProviderAttemptEntity> attemptEntities = new ArrayList<>();
-        for (ProviderAttempt attempt : run.getAttempts()) {
-            attemptEntities.add(toAttemptEntity(entity, attempt));
-        }
-        entity.setAttempts(attemptEntities);
-
+        updateEntity(entity, run);
         return entity;
+    }
+
+    public void updateEntity(RunEntity entity, Run run) {
+        Objects.requireNonNull(entity, "entity");
+        Objects.requireNonNull(run, "run");
+
+        entity.setStage(run.getStage());
+        entity.setArea(run.getArea());
+        entity.setNeed(run.getNeed());
+        entity.setDeadline(run.getDeadline());
+        entity.setBudgetAmount(run.getBudget().amount());
+        entity.setBudgetCurrency(run.getBudget().currencyCode());
+        entity.setDryRun(run.isDryRun());
+        entity.setStatus(run.getStatus());
+        entity.setNextProviderIndex(run.getNextProviderIndex());
+        entity.setWinnerProviderId(run.getWinnerProviderId().orElse(null));
+        entity.setUpdatedAt(run.getUpdatedAt());
+
+        // Update or append attempts
+        List<ProviderAttempt> domainAttempts = run.getAttempts();
+        List<ProviderAttemptEntity> existingEntities = entity.getAttempts();
+
+        for (int i = 0; i < domainAttempts.size(); i++) {
+            ProviderAttempt domainAttempt = domainAttempts.get(i);
+            if (i < existingEntities.size()) {
+                ProviderAttemptEntity existing = existingEntities.get(i);
+                updateAttemptEntity(existing, domainAttempt);
+            } else {
+                existingEntities.add(toAttemptEntity(entity, domainAttempt));
+            }
+        }
+    }
+
+    private void updateAttemptEntity(ProviderAttemptEntity entity, ProviderAttempt attempt) {
+        entity.setCalleCallId(attempt.getCalleCallId().orElse(null));
+        entity.setStartedAt(attempt.getStartedAt().orElse(null));
+        entity.setCompletedAt(attempt.getCompletedAt().orElse(null));
+
+        attempt.getResult().ifPresentOrElse(res -> {
+            entity.setResultProviderName(res.providerName());
+            entity.setCanService(res.canService());
+            entity.setOperatingDuringLoadShedding(res.operatingDuringLoadShedding());
+            res.quotedPriceOptional().ifPresentOrElse(price -> {
+                entity.setQuotedPriceAmount(price.amount());
+                entity.setQuotedPriceCurrency(price.currencyCode());
+            }, () -> {
+                entity.setQuotedPriceAmount(null);
+                entity.setQuotedPriceCurrency(null);
+            });
+            entity.setEtaMinutes(res.etaMinutesOptional().orElse(null));
+            entity.setDeliveryCutoffSpoken(res.deliveryCutoffSpokenOptional().orElse(null));
+            entity.setSpokenEvidence(res.spokenEvidence());
+            entity.setCommitmentMade(res.commitmentMade());
+            entity.setOutcome(res.outcome());
+        }, () -> {
+            entity.setResultProviderName(null);
+            entity.setCanService(null);
+            entity.setOperatingDuringLoadShedding(null);
+            entity.setQuotedPriceAmount(null);
+            entity.setQuotedPriceCurrency(null);
+            entity.setEtaMinutes(null);
+            entity.setDeliveryCutoffSpoken(null);
+            entity.setSpokenEvidence(null);
+            entity.setCommitmentMade(null);
+            entity.setOutcome(null);
+        });
     }
 
     public Run toDomain(RunEntity entity) {

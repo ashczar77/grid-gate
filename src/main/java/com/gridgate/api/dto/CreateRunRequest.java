@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -16,8 +17,8 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record CreateRunRequest(
         @Min(value = 0, message = "stage must be >= 0") int stage,
-        @NotBlank(message = "area is required") String area,
-        @NotBlank(message = "need is required") String need,
+        @NotBlank(message = "area is required") @Size(max = 255, message = "area must not exceed 255 characters") String area,
+        @NotBlank(message = "need is required") @Size(max = 1000, message = "need must not exceed 1000 characters") String need,
         @NotNull(message = "deadline is required") ZonedDateTime deadline,
         @NotNull(message = "budget_amount is required") @DecimalMin(value = "0.0", inclusive = true, message = "budget_amount must be >= 0") BigDecimal budgetAmount,
         @NotBlank(message = "budget_currency is required") @Pattern(regexp = "^[A-Za-z]{3}$", message = "budget_currency must be a 3-letter ISO code") String budgetCurrency,

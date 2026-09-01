@@ -53,7 +53,8 @@ class CalleWireMockTest {
         CalleProperties properties = new CalleProperties(
                 "test-api-key-12345",
                 wireMockServer.baseUrl(),
-                "https://gridgate.example.com/calle/webhook");
+                "https://gridgate.example.com/calle/webhook",
+                null);
 
         CalleConfig config = new CalleConfig();
         WebClient webClient = config.calleApiWebClient(properties, WebClient.builder());

@@ -24,8 +24,11 @@ public class RunEventHub {
 
     private static final Logger log = LoggerFactory.getLogger(RunEventHub.class);
     private static final long DEFAULT_TIMEOUT_MS = 30 * 60 * 1000L; // 30 minutes
+    public static final int MAX_SUBSCRIBERS_PER_RUN = 10;
+    public static final int MAX_GLOBAL_SUBSCRIBERS = 200;
 
     private final Map<UUID, List<SseEmitter>> subscriptions = new ConcurrentHashMap<>();
+    private final java.util.concurrent.atomic.AtomicInteger totalEmitters = new java.util.concurrent.atomic.AtomicInteger(0);
 
     /**
      * Subscribes an SSE client to updates for a specific run.
@@ -35,12 +38,35 @@ public class RunEventHub {
         Objects.requireNonNull(runId, "runId");
         Objects.requireNonNull(currentRun, "currentRun");
 
-        SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT_MS);
         List<SseEmitter> runEmitters = subscriptions.computeIfAbsent(runId, k -> new CopyOnWriteArrayList<>());
+
+        // Bound subscribers per run to prevent connection exhaustion
+        while (runEmitters.size() >= MAX_SUBSCRIBERS_PER_RUN) {
+            SseEmitter oldest = runEmitters.remove(0);
+            if (oldest != null) {
+                try {
+                    oldest.complete();
+                } catch (Exception ignored) {}
+                totalEmitters.decrementAndGet();
+            }
+        }
+
+        // Global safeguard
+        if (totalEmitters.get() >= MAX_GLOBAL_SUBSCRIBERS) {
+            log.warn("Max global SSE subscribers ({}) reached. Rejecting new subscriber.", MAX_GLOBAL_SUBSCRIBERS);
+            SseEmitter rejected = new SseEmitter(0L);
+            rejected.complete();
+            return rejected;
+        }
+
+        SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT_MS);
         runEmitters.add(emitter);
+        totalEmitters.incrementAndGet();
 
         Runnable cleanup = () -> {
-            runEmitters.remove(emitter);
+            if (runEmitters.remove(emitter)) {
+                totalEmitters.decrementAndGet();
+            }
             if (runEmitters.isEmpty()) {
                 subscriptions.remove(runId, runEmitters);
             }

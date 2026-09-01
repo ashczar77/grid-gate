@@ -40,6 +40,10 @@ public final class TaskPromptBuilder {
         String budget = run.getBudget().amount().toPlainString()
                 + " " + run.getBudget().currencyCode();
 
+        String safeProviderName = sanitizeSingleLine(spec.name());
+        String safeArea = sanitizeSingleLine(run.getArea());
+        String safeNeed = sanitizeMultiLine(run.getNeed());
+
         return """
                 IMPORTANT: You are an AI assistant calling on behalf of a customer. \
                 Identify yourself as an AI at the very start of the call.
@@ -62,16 +66,28 @@ public final class TaskPromptBuilder {
                 - Do NOT make or imply any booking or payment commitment.
                 - End the call politely once all questions are answered.
                 """.formatted(
-                spec.name(),
-                run.getArea(),
+                safeProviderName,
+                safeArea,
                 run.getStage(),
-                run.getNeed(),
-                run.getArea(),
+                safeNeed,
+                safeArea,
                 deadline,
                 budget,
-                run.getArea(),
+                safeArea,
                 run.getStage(),
                 deadline,
                 budget);
+    }
+
+    private static String sanitizeSingleLine(String input) {
+        if (input == null) return "";
+        // Strip control characters and newlines
+        return input.replaceAll("[\\r\\n\\t\\f\\v]", " ").trim();
+    }
+
+    private static String sanitizeMultiLine(String input) {
+        if (input == null) return "";
+        // Strip non-printable ASCII control characters except standard space/newline
+        return input.replaceAll("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]", " ").trim();
     }
 }

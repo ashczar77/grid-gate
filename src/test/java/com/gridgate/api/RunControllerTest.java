@@ -115,21 +115,55 @@ class RunControllerTest {
     }
 
     @Test
-    void createRunRejectsInvalidInput() throws Exception {
-        String invalidPayload = """
+    void createRunRejectsInvalidPhoneFormat() throws Exception {
+        String payload = """
                 {
-                  "stage": -1,
-                  "area": "",
-                  "need": "",
-                  "budget_amount": -50.00,
-                  "budget_currency": "INVALID",
-                  "providers": []
+                  "stage": 2,
+                  "area": "Sandton",
+                  "need": "Emergency plumber",
+                  "deadline": "2026-08-24T18:00:00+02:00",
+                  "budget_amount": 1000.00,
+                  "budget_currency": "ZAR",
+                  "providers": [
+                    {
+                      "id": "p1",
+                      "name": "Fast Plumb",
+                      "phone_e164": "4155550101"
+                    }
+                  ]
                 }
                 """;
 
         mockMvc.perform(post("/api/runs")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalidPayload))
+                        .content(payload))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void createRunRejectsExcessiveFieldLengths() throws Exception {
+        String longArea = "A".repeat(256);
+        String payload = """
+                {
+                  "stage": 2,
+                  "area": "%s",
+                  "need": "Emergency plumber",
+                  "deadline": "2026-08-24T18:00:00+02:00",
+                  "budget_amount": 1000.00,
+                  "budget_currency": "ZAR",
+                  "providers": [
+                    {
+                      "id": "p1",
+                      "name": "Fast Plumb",
+                      "phone_e164": "+14155550101"
+                    }
+                  ]
+                }
+                """.formatted(longArea);
+
+        mockMvc.perform(post("/api/runs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payload))
                 .andExpect(status().isBadRequest());
     }
 

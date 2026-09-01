@@ -20,7 +20,17 @@ server:
 gridgate:
   dry-run-default: true
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
 calle:
   api-key: ${CALLE_API_KEY:}
   base-url: ${CALLE_BASE_URL:https://api.heycall-e.com}
   webhook-public-url: ${GRIDGATE_WEBHOOK_URL:}
+  webhook-secret: ${CALLE_WEBHOOK_SECRET:}

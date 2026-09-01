@@ -43,6 +43,16 @@ function setupEventListeners() {
   });
 }
 
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function handleRemoveRow(btn) {
   const row = btn.closest('.provider-row');
   if (!row) return;
@@ -64,9 +74,9 @@ function addProviderRow(id = '', name = '', phone = '') {
   const row = document.createElement('div');
   row.className = 'provider-row';
   row.innerHTML = `
-    <input type="text" class="prov-id" placeholder="ID" value="${id || 'p' + index}">
-    <input type="text" class="prov-name" placeholder="Provider Name" value="${name}">
-    <input type="text" class="prov-phone" placeholder="+1..." value="${phone}">
+    <input type="text" class="prov-id" placeholder="ID" value="${escapeHtml(id || 'p' + index)}">
+    <input type="text" class="prov-name" placeholder="Provider Name" value="${escapeHtml(name)}">
+    <input type="text" class="prov-phone" placeholder="+1..." value="${escapeHtml(phone)}">
     <button type="button" class="remove-btn" title="Remove" onclick="handleRemoveRow(this)">&times;</button>
   `;
   container.appendChild(row);
@@ -132,7 +142,7 @@ function addActivityLog(message, type = '', dedupeKey = null) {
     const timeStr = new Date().toLocaleTimeString();
     const entry = document.createElement('div');
     entry.className = `log-entry ${type}`;
-    entry.innerHTML = `<span class="log-time">[${timeStr}]</span> ${message}`;
+    entry.innerHTML = `<span class="log-time">[${escapeHtml(timeStr)}]</span> ${escapeHtml(message)}`;
     list.appendChild(entry);
     list.scrollTop = list.scrollHeight;
   }
@@ -251,10 +261,18 @@ async function handleArmLive() {
 }
 
 let syncInterval = null;
+let syncCount = 0;
 
 function startSyncPolling(runId) {
   if (syncInterval) clearInterval(syncInterval);
+  syncCount = 0;
   syncInterval = setInterval(async () => {
+    syncCount++;
+    if (syncCount > 30) {
+      clearInterval(syncInterval);
+      syncInterval = null;
+      return;
+    }
     try {
       const res = await fetch(`/api/runs/${runId}/sync`, { method: 'POST' });
       if (res.ok) {
@@ -268,7 +286,7 @@ function startSyncPolling(runId) {
     } catch (e) {
       // Ignore background sync network glitches
     }
-  }, 4000);
+  }, 8000);
 }
 
 async function handleCancelRun() {
@@ -367,10 +385,10 @@ function renderRun(run) {
 
   // Status Badge
   const statusBadge = document.getElementById('run-status-badge');
-  statusBadge.className = `badge badge-${run.status.toLowerCase().replace('_', '-')}`;
+  statusBadge.className = `badge badge-${escapeHtml(run.status.toLowerCase().replace('_', '-'))}`;
   statusBadge.innerHTML = run.status === 'RUNNING' 
     ? `<span class="pulse-dot"></span> RUNNING`
-    : run.status;
+    : escapeHtml(run.status);
 
   // Controls
   const armBtn = document.getElementById('btn-arm-live');
@@ -402,27 +420,28 @@ function renderRun(run) {
     const winnerProv = run.providers.find(p => p.id === run.winner_provider_id);
     const winnerAttempt = run.attempts.find(a => a.provider_id === run.winner_provider_id);
     const res = winnerAttempt?.result || {};
+    const winnerName = winnerProv ? winnerProv.name : run.winner_provider_id;
 
     winnerContainer.innerHTML = `
       <div class="winner-card">
         <div class="winner-title">
-          <span>&#10004;</span> Provider Confirmed: ${winnerProv ? winnerProv.name : run.winner_provider_id}
+          <span>&#10004;</span> Provider Confirmed: ${escapeHtml(winnerName)}
         </div>
         <div class="spoken-quote">
-          "${res.spoken_evidence || 'Confirmed service availability.'}"
+          "${escapeHtml(res.spoken_evidence || 'Confirmed service availability.')}"
         </div>
         <div class="winner-details">
           <div class="winner-detail-item">
             <div class="winner-detail-label">Phone</div>
-            <div class="winner-detail-value">${winnerProv ? winnerProv.masked_phone : ''}</div>
+            <div class="winner-detail-value">${escapeHtml(winnerProv ? winnerProv.masked_phone : '')}</div>
           </div>
           <div class="winner-detail-item">
             <div class="winner-detail-label">Quoted Price</div>
-            <div class="winner-detail-value">${res.quoted_price_amount ? 'R' + res.quoted_price_amount + ' ' + res.quoted_price_currency : 'Within budget'}</div>
+            <div class="winner-detail-value">${res.quoted_price_amount ? escapeHtml('R' + res.quoted_price_amount + ' ' + res.quoted_price_currency) : 'Within budget'}</div>
           </div>
           <div class="winner-detail-item">
             <div class="winner-detail-label">ETA</div>
-            <div class="winner-detail-value">${res.eta_minutes ? res.eta_minutes + ' min' : (res.delivery_cutoff_spoken || 'Before deadline')}</div>
+            <div class="winner-detail-value">${res.eta_minutes ? escapeHtml(res.eta_minutes + ' min') : escapeHtml(res.delivery_cutoff_spoken || 'Before deadline')}</div>
           </div>
           <div class="winner-detail-item">
             <div class="winner-detail-label">Load-Shedding</div>
@@ -461,7 +480,7 @@ function renderRun(run) {
       else outcomeBadgeClass = 'badge-cancelled';
 
       if (attempt.result.spoken_evidence) {
-        quoteHtml = `<div class="spoken-quote">${attempt.result.spoken_evidence}</div>`;
+        quoteHtml = `<div class="spoken-quote">${escapeHtml(attempt.result.spoken_evidence)}</div>`;
       }
     } else if (isActive) {
       outcomeText = 'Dialling via CALL-E...';
@@ -471,10 +490,10 @@ function renderRun(run) {
     card.innerHTML = `
       <div class="attempt-header">
         <div>
-          <span class="attempt-provider">#${index + 1} ${provider.name}</span>
-          <span class="attempt-phone">${provider.masked_phone}</span>
+          <span class="attempt-provider">#${index + 1} ${escapeHtml(provider.name)}</span>
+          <span class="attempt-phone">${escapeHtml(provider.masked_phone)}</span>
         </div>
-        <span class="badge ${outcomeBadgeClass}">${outcomeText}</span>
+        <span class="badge ${escapeHtml(outcomeBadgeClass)}">${escapeHtml(outcomeText)}</span>
       </div>
       ${quoteHtml}
     `;

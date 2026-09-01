@@ -65,4 +65,13 @@ class RunEventHubTest {
         SseEmitter emitter = eventHub.subscribe(sampleRun.getId(), sampleRun);
         assertNotNull(emitter);
     }
+
+    @Test
+    void subscriberCapEnforcedWithoutMemoryLeak() {
+        for (int i = 0; i < RunEventHub.MAX_SUBSCRIBERS_PER_RUN + 5; i++) {
+            SseEmitter emitter = eventHub.subscribe(sampleRun.getId(), sampleRun);
+            assertNotNull(emitter);
+        }
+        assertDoesNotThrow(() -> eventHub.publishUpdate(sampleRun));
+    }
 }

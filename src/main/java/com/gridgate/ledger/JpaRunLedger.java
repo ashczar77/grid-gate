@@ -23,7 +23,14 @@ public class JpaRunLedger implements RunLedger {
     @Override
     public Run save(Run run) {
         Objects.requireNonNull(run, "run");
-        RunEntity entity = mapper.toEntity(run);
+        Optional<RunEntity> existingOpt = repository.findById(run.getId());
+        RunEntity entity;
+        if (existingOpt.isPresent()) {
+            entity = existingOpt.get();
+            mapper.updateEntity(entity, run);
+        } else {
+            entity = mapper.toEntity(run);
+        }
         RunEntity saved = repository.save(entity);
         return mapper.toDomain(saved);
     }
