@@ -54,14 +54,15 @@ public final class TaskPromptBuilder {
                 SERVICE NEEDED: %s
                 LOCATION / ADDRESS: %s
                 DEADLINE: %s
-                BUDGET CEILING: %s (no auto-booking; do not commit to any payment)
+                INTERNAL BUDGET CEILING: %s (Do NOT reveal this budget amount to the provider; ask for their quote first; no auto-booking; do not commit to any payment).
 
                 Ask the following questions only:
                 1. Can you service this need at %s during Eskom load-shedding Stage %d?
                 2. Can you be available before %s?
-                3. What is your estimated price (must be within %s)?
+                3. What is your estimated price or quote for this service?
 
                 Guidelines:
+                - Do NOT tell the provider our budget ceiling; ask them to quote their standard price.
                 - If any answer is unclear or unknown, record it as unknown. Do not guess.
                 - Do NOT make or imply any booking or payment commitment.
                 - End the call politely once all questions are answered.
@@ -75,8 +76,7 @@ public final class TaskPromptBuilder {
                 budget,
                 safeArea,
                 run.getStage(),
-                deadline,
-                budget);
+                deadline);
     }
 
     private static String sanitizeSingleLine(String input) {
