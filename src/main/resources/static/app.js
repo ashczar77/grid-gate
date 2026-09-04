@@ -26,6 +26,9 @@ function setupEventListeners() {
     resetBtn.addEventListener('click', handleResetCascade);
   }
 
+  // Setup drag and drop for initial rows
+  document.querySelectorAll('.provider-row').forEach(row => setupDragAndDrop(row));
+
   // Event delegation for all remove buttons (initial and dynamic)
   document.getElementById('providers-container').addEventListener('click', (e) => {
     const removeBtn = e.target.closest('.remove-btn');
@@ -44,6 +47,44 @@ function setupEventListeners() {
         document.getElementById('need').value = needText;
       }
     });
+  });
+}
+
+let draggedRow = null;
+
+function setupDragAndDrop(row) {
+  row.setAttribute('draggable', 'true');
+
+  row.addEventListener('dragstart', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') {
+      e.preventDefault();
+      return;
+    }
+    draggedRow = row;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
+    setTimeout(() => row.classList.add('dragging'), 0);
+  });
+
+  row.addEventListener('dragend', () => {
+    if (draggedRow) {
+      draggedRow.classList.remove('dragging');
+      draggedRow = null;
+    }
+  });
+
+  row.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    if (!draggedRow || draggedRow === row) return;
+    e.dataTransfer.dropEffect = 'move';
+
+    const rect = row.getBoundingClientRect();
+    const offset = e.clientY - rect.top;
+    if (offset < rect.height / 2) {
+      row.parentNode.insertBefore(draggedRow, row);
+    } else {
+      row.parentNode.insertBefore(draggedRow, row.nextSibling);
+    }
   });
 }
 
@@ -78,11 +119,13 @@ function addProviderRow(id = '', name = '', phone = '') {
   const row = document.createElement('div');
   row.className = 'provider-row';
   row.innerHTML = `
+    <span class="drag-handle" title="Drag to reorder">&#8942;&#8942;</span>
     <input type="text" class="prov-id" placeholder="ID" value="${escapeHtml(id || 'p' + index)}">
     <input type="text" class="prov-name" placeholder="Provider Name" value="${escapeHtml(name)}">
     <input type="text" class="prov-phone" placeholder="+1..." value="${escapeHtml(phone)}">
     <button type="button" class="remove-btn" title="Remove" onclick="handleRemoveRow(this)">&times;</button>
   `;
+  setupDragAndDrop(row);
   container.appendChild(row);
 }
 
@@ -441,6 +484,8 @@ function renderRun(run) {
     addActivityLog(`Winner confirmed: ${winnerName}! Cascade fulfilled.`, 'success', `winner_${run.id}`);
   } else if (run.status === 'EXHAUSTED') {
     addActivityLog('All providers completed. None could fulfill need within parameters.', 'error', `exhausted_${run.id}`);
+  } else if (run.status === 'HALTED_AMBIGUOUS') {
+    addActivityLog('Cascade safely halted: Callee response was ambiguous. Paused for human review to avoid double-booking or misunderstandings.', 'highlight', `halted_${run.id}`);
   } else if (run.status === 'CANCELLED') {
     addActivityLog('Cascade run cancelled.', 'error', `cancelled_${run.id}`);
   }
@@ -459,7 +504,7 @@ function renderRun(run) {
 
   // Status Badge
   const statusBadge = document.getElementById('run-status-badge');
-  statusBadge.className = `badge badge-${escapeHtml(run.status.toLowerCase().replace('_', '-'))}`;
+  statusBadge.className = `badge badge-${escapeHtml(run.status.toLowerCase().replace(/_/g, '-'))}`;
   statusBadge.innerHTML = run.status === 'RUNNING' 
     ? `<span class="pulse-dot"></span> RUNNING`
     : escapeHtml(run.status);
@@ -485,19 +530,28 @@ function renderRun(run) {
   const notice = document.getElementById('run-notice');
   if (run.status === 'PLAN_READY') {
     notice.style.display = 'block';
+    notice.className = 'notice-box';
     notice.innerHTML = '<strong>Gate 1 Active:</strong> Dry-run plan created. Phone numbers masked. Zero calls placed without explicit Gate 2 consent.';
   } else if (run.status === 'RUNNING') {
     notice.style.display = 'block';
+    notice.className = 'notice-box notice-running';
     notice.innerHTML = '<strong>Gate 2 Consent Active:</strong> Live telephony cascade in progress via CALL-E. Dialling providers in sequential order.';
   } else if (run.status === 'CANCELLED') {
     notice.style.display = 'block';
+    notice.className = 'notice-box notice-cancelled';
     notice.innerHTML = '<strong>Cascade Cancelled:</strong> Run has been stopped. Remaining providers skipped.';
   } else if (run.status === 'FULFILLED') {
     notice.style.display = 'block';
+    notice.className = 'notice-box notice-success';
     notice.innerHTML = '<strong>Cascade Fulfilled:</strong> A provider has confirmed availability and parameters.';
   } else if (run.status === 'EXHAUSTED') {
     notice.style.display = 'block';
+    notice.className = 'notice-box notice-error';
     notice.innerHTML = '<strong>Cascade Exhausted:</strong> All providers contacted; none could fulfill need within constraints.';
+  } else if (run.status === 'HALTED_AMBIGUOUS') {
+    notice.style.display = 'block';
+    notice.className = 'notice-box notice-warning';
+    notice.innerHTML = '<strong>⚠️ Cascade Safely Halted (Ambiguous Response):</strong> The callee gave an ambiguous or incomplete response (e.g. only said "hello"). GridGate automatically paused the cascade to protect against double booking or misinterpreting intent. You can review the details below or click <strong>Reset / New</strong> to start a new cascade.';
   } else {
     notice.style.display = 'none';
   }
