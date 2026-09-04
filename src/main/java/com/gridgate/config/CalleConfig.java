@@ -40,8 +40,8 @@ public class CalleConfig {
                 .build();
 
         HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
-                .responseTimeout(Duration.ofSeconds(15));
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000)
+                .responseTimeout(Duration.ofSeconds(60));
 
         WebClient.Builder webClientBuilder = builder
                 .baseUrl(properties.baseUrl())

@@ -579,6 +579,30 @@ input:focus, select:focus, textarea:focus {
   line-height: 1.5;
 }
 
+.notice-box.notice-running {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #bae6fd;
+}
+
+.notice-box.notice-error {
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.4);
+  color: #fecdd3;
+}
+
+.notice-box.notice-success {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #a7f3d0;
+}
+
+.notice-box.notice-cancelled {
+  background: rgba(148, 143, 176, 0.1);
+  border-color: rgba(148, 143, 176, 0.25);
+  color: #cbd5e1;
+}
+
 .empty-state {
   text-align: center;
   padding: 60px 28px;

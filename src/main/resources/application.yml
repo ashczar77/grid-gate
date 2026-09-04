@@ -24,8 +24,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,shutdown
   endpoint:
+    shutdown:
+      enabled: true
     health:
       show-details: when_authorized
 

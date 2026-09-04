@@ -110,7 +110,7 @@ public class RunDialService {
 
         CreateCallRequest callRequest = new CreateCallRequest(
                 prompt,
-                List.of(new RecipientInput(List.of(spec.phoneE164()), "ZA", "en-ZA")),
+                List.of(createRecipientInput(spec.phoneE164())),
                 null,
                 RecipientResultSchemas.recipientResultSchema(),
                 CalleMetadata.forAttempt(run, attempt).toMap(),
@@ -122,6 +122,16 @@ public class RunDialService {
         var callResponse = calleClient.createCall(callRequest, idempotencyKey);
         attempt.markStarted(callResponse.id(), now);
         return Optional.of(attempt);
+    }
+
+    private static RecipientInput createRecipientInput(String phoneE164) {
+        if (phoneE164 != null && phoneE164.startsWith("+1")) {
+            return new RecipientInput(List.of(phoneE164), "US", "en-US");
+        } else if (phoneE164 != null && phoneE164.startsWith("+44")) {
+            return new RecipientInput(List.of(phoneE164), "GB", "en-GB");
+        }
+        // For other international numbers, omit region and locale so CALL-E handles direct dialing
+        return new RecipientInput(List.of(phoneE164));
     }
 
     /**

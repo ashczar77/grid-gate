@@ -21,6 +21,10 @@ function setupEventListeners() {
   document.getElementById('btn-simulate-offline').addEventListener('click', handleSimulate);
   document.getElementById('btn-arm-live').addEventListener('click', handleArmLive);
   document.getElementById('btn-cancel-run').addEventListener('click', handleCancelRun);
+  const resetBtn = document.getElementById('btn-reset-cascade');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', handleResetCascade);
+  }
 
   // Event delegation for all remove buttons (initial and dynamic)
   document.getElementById('providers-container').addEventListener('click', (e) => {
@@ -155,6 +159,11 @@ async function handleCreatePlan() {
     return;
   }
 
+  const createBtn = document.getElementById('btn-create-plan');
+  const simBtn = document.getElementById('btn-simulate-offline');
+  createBtn.disabled = true;
+  simBtn.disabled = true;
+
   // Clear previous log lines and keys
   loggedEvents.clear();
   const list = document.getElementById('activity-log-lines');
@@ -172,6 +181,8 @@ async function handleCreatePlan() {
       const err = await res.json();
       addActivityLog(`Error creating plan: ${JSON.stringify(err)}`, 'error');
       alert('Error creating plan: ' + JSON.stringify(err));
+      createBtn.disabled = false;
+      simBtn.disabled = false;
       return;
     }
 
@@ -183,10 +194,17 @@ async function handleCreatePlan() {
   } catch (e) {
     addActivityLog(`Network error: ${e.message}`, 'error');
     alert('Network error creating plan: ' + e.message);
+    createBtn.disabled = false;
+    simBtn.disabled = false;
   }
 }
 
 async function handleSimulate() {
+  const createBtn = document.getElementById('btn-create-plan');
+  const simBtn = document.getElementById('btn-simulate-offline');
+  createBtn.disabled = true;
+  simBtn.disabled = true;
+
   loggedEvents.clear();
   const list = document.getElementById('activity-log-lines');
   if (list) list.innerHTML = '';
@@ -201,6 +219,8 @@ async function handleSimulate() {
       const err = await res.json();
       addActivityLog(`Simulation error: ${JSON.stringify(err)}`, 'error');
       alert('Simulation error: ' + JSON.stringify(err));
+      createBtn.disabled = false;
+      simBtn.disabled = false;
       return;
     }
 
@@ -211,6 +231,8 @@ async function handleSimulate() {
   } catch (e) {
     addActivityLog(`Simulation error: ${e.message}`, 'error');
     alert('Network error starting simulation: ' + e.message);
+    createBtn.disabled = false;
+    simBtn.disabled = false;
   }
 }
 
@@ -227,6 +249,13 @@ async function handleArmLive() {
     armBtn.innerHTML = '<span class="pulse-dot"></span> Calling via CALL-E...';
   }
 
+  const notice = document.getElementById('run-notice');
+  if (notice) {
+    notice.style.display = 'block';
+    notice.className = 'notice-box notice-running';
+    notice.innerHTML = '<strong>Gate 2 Consent Granted:</strong> Dispatching call to CALL-E API...';
+  }
+
   addActivityLog('Gate 2 Consent granted. Sending dispatch request to CALL-E API...', 'highlight', `arm_req_${currentRunId}`);
 
   try {
@@ -236,9 +265,13 @@ async function handleArmLive() {
 
     if (!res.ok) {
       const err = await res.json();
-      const errorMsg = err.message || JSON.stringify(err);
+      const errorMsg = err.detail || err.message || JSON.stringify(err);
       addActivityLog(`Failed to arm live call: ${errorMsg}`, 'error');
-      alert('Error arming run: ' + errorMsg);
+      if (notice) {
+        notice.style.display = 'block';
+        notice.className = 'notice-box notice-error';
+        notice.innerHTML = `<strong>Call Dispatch Failed:</strong> ${escapeHtml(errorMsg)}`;
+      }
       if (armBtn) {
         armBtn.disabled = false;
         armBtn.innerHTML = 'Arm Live Calls (Consent)';
@@ -252,7 +285,11 @@ async function handleArmLive() {
     startSyncPolling(run.id);
   } catch (e) {
     addActivityLog(`Network error arming run: ${e.message}`, 'error');
-    alert('Network error arming run: ' + e.message);
+    if (notice) {
+      notice.style.display = 'block';
+      notice.className = 'notice-box notice-error';
+      notice.innerHTML = `<strong>Network Error:</strong> ${escapeHtml(e.message)}`;
+    }
     if (armBtn) {
       armBtn.disabled = false;
       armBtn.innerHTML = 'Arm Live Calls (Consent)';
@@ -320,6 +357,33 @@ async function handleCancelRun() {
   }
 }
 
+function handleResetCascade() {
+  if (syncInterval) {
+    clearInterval(syncInterval);
+    syncInterval = null;
+  }
+  if (eventSource) {
+    eventSource.close();
+    eventSource = null;
+  }
+  currentRunId = null;
+  loggedEvents.clear();
+  const list = document.getElementById('activity-log-lines');
+  if (list) list.innerHTML = '';
+  const box = document.getElementById('live-activity-box');
+  if (box) box.style.display = 'none';
+  document.getElementById('empty-state').style.display = 'block';
+  document.getElementById('run-view').style.display = 'none';
+  const statusBadge = document.getElementById('run-status-badge');
+  statusBadge.className = 'badge badge-cancelled';
+  statusBadge.textContent = 'No Active Run';
+
+  const createBtn = document.getElementById('btn-create-plan');
+  const simBtn = document.getElementById('btn-simulate-offline');
+  if (createBtn) createBtn.disabled = false;
+  if (simBtn) simBtn.disabled = false;
+}
+
 function subscribeSse(runId) {
   if (eventSource) {
     eventSource.close();
@@ -354,6 +418,16 @@ function renderRun(run) {
 
   document.getElementById('run-id-display').textContent = run.id;
   document.getElementById('raw-json').textContent = JSON.stringify(run, null, 2);
+
+  const createBtn = document.getElementById('btn-create-plan');
+  const simBtn = document.getElementById('btn-simulate-offline');
+  if (run.status === 'PLAN_READY' || run.status === 'RUNNING') {
+    if (createBtn) createBtn.disabled = true;
+    if (simBtn) simBtn.disabled = true;
+  } else {
+    if (createBtn) createBtn.disabled = false;
+    if (simBtn) simBtn.disabled = false;
+  }
 
   // Deduplicated Activity Logging
   if (run.status === 'RUNNING') {
@@ -396,7 +470,9 @@ function renderRun(run) {
 
   if (run.status === 'PLAN_READY') {
     armBtn.style.display = 'inline-flex';
-    cancelBtn.style.display = 'none';
+    armBtn.disabled = false;
+    armBtn.innerHTML = 'Arm Live Calls (Consent)';
+    cancelBtn.style.display = 'inline-flex';
   } else if (run.status === 'RUNNING') {
     armBtn.style.display = 'none';
     cancelBtn.style.display = 'inline-flex';
@@ -409,7 +485,19 @@ function renderRun(run) {
   const notice = document.getElementById('run-notice');
   if (run.status === 'PLAN_READY') {
     notice.style.display = 'block';
-    notice.textContent = 'Gate 1 active: Dry-run plan created. Phone numbers masked. No calls placed without explicit Gate 2 consent.';
+    notice.innerHTML = '<strong>Gate 1 Active:</strong> Dry-run plan created. Phone numbers masked. Zero calls placed without explicit Gate 2 consent.';
+  } else if (run.status === 'RUNNING') {
+    notice.style.display = 'block';
+    notice.innerHTML = '<strong>Gate 2 Consent Active:</strong> Live telephony cascade in progress via CALL-E. Dialling providers in sequential order.';
+  } else if (run.status === 'CANCELLED') {
+    notice.style.display = 'block';
+    notice.innerHTML = '<strong>Cascade Cancelled:</strong> Run has been stopped. Remaining providers skipped.';
+  } else if (run.status === 'FULFILLED') {
+    notice.style.display = 'block';
+    notice.innerHTML = '<strong>Cascade Fulfilled:</strong> A provider has confirmed availability and parameters.';
+  } else if (run.status === 'EXHAUSTED') {
+    notice.style.display = 'block';
+    notice.innerHTML = '<strong>Cascade Exhausted:</strong> All providers contacted; none could fulfill need within constraints.';
   } else {
     notice.style.display = 'none';
   }
