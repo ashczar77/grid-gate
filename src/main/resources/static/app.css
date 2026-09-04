@@ -353,7 +353,7 @@ input:focus, select:focus, textarea:focus {
 /* ── Provider Rows ──────────────────────────────────────────────── */
 .provider-header-row {
   display: grid;
-  grid-template-columns: 24px 90px 1fr 140px 38px;
+  grid-template-columns: 90px 1fr 140px 38px;
   gap: 10px;
   font-size: 10px;
   font-weight: 700;
@@ -366,41 +366,10 @@ input:focus, select:focus, textarea:focus {
 
 .provider-row {
   display: grid;
-  grid-template-columns: 24px 90px 1fr 140px 38px;
+  grid-template-columns: 90px 1fr 140px 38px;
   gap: 10px;
   margin-bottom: 10px;
   align-items: center;
-  background: var(--bg-card);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
-}
-
-.drag-handle {
-  cursor: grab;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  font-size: 14px;
-  user-select: none;
-  padding: 8px 0;
-  transition: color 0.15s ease;
-}
-
-.drag-handle:hover {
-  color: var(--accent-fuchsia);
-}
-
-.drag-handle:active {
-  cursor: grabbing;
-}
-
-.provider-row.dragging {
-  opacity: 0.45;
-  border: 1px dashed var(--accent-fuchsia);
-  background: rgba(217, 70, 239, 0.08);
-  transform: scale(0.99);
 }
 
 .provider-row input {
@@ -471,12 +440,6 @@ input:focus, select:focus, textarea:focus {
   background: rgba(100, 95, 128, 0.2);
   color: #c4b5fd;
   border: 1px solid rgba(100, 95, 128, 0.3);
-}
-
-.badge-halted-ambiguous {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fcd34d;
-  border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
 .pulse-dot {
@@ -638,12 +601,6 @@ input:focus, select:focus, textarea:focus {
   background: rgba(148, 143, 176, 0.1);
   border-color: rgba(148, 143, 176, 0.25);
   color: #cbd5e1;
-}
-
-.notice-box.notice-warning {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.4);
-  color: #fde68a;
 }
 
 .empty-state {
