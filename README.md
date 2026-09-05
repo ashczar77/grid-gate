@@ -1,6 +1,6 @@
 # GridGate
 
-An AI phone agent that finds available providers when unreliable power makes normal booking impossible, powered by [CALL-E](https://www.heycall-e.com/).
+An experimental local developer workbench and reference prototype for AI phone agent cascades when unreliable power makes normal booking impossible, powered by [CALL-E](https://www.heycall-e.com/).
 
 ![GridGate Web UI](docs/assets/grid-gate-screenshot.png)
 
@@ -10,20 +10,21 @@ GridGate calls providers one at a time when outages make it unclear who is still
 
 Built for the [CALL-E: Your Code Is Calling](https://call-e.devpost.com/) hackathon.
 
-## How it works during outages
+> **Scope & Prototype Notice:** GridGate is an experimental, local-only developer reference workbench built for evaluation and demonstration. In this prototype stage, execution, stream, cancellation, and actuator endpoints are unauthenticated, webhook signature validation is optional for local development, and outbound calls should only be triggered with trusted credentials in local environments.
 
-GridGate runs on cloud infrastructure, not on your home laptop. CALL-E places the calls from its platform too. Load shedding at your house is the problem GridGate helps with, not a reason the service stops.
+## How it works
 
-You submit a run (deadline, budget, provider list) while you have connectivity. That can be before the slot, over mobile data when Wi-Fi is down, or from a scheduled job. GridGate calls each provider and asks whether they can still operate during the outage window. Many businesses answer from backup power. GridGate stops at the first firm yes within budget and returns the quote and what they said on the call.
+GridGate demonstrates a consent-gated cascade pattern:
+You submit a run (deadline, budget, provider list). GridGate previews the plan in local dry-run simulation by default. When explicitly armed, it calls providers sequentially via CALL-E and asks whether they can operate during the outage window. GridGate stops at the first firm confirmation within budget and returns structured quotes and spoken evidence.
 
-## Two-Gate Safety Architecture
+## Two-Gate Safety & Consent Flow
 
-GridGate enforces safety, privacy, and human consent at the architecture level:
+GridGate implements consent gating and safety guardrails at the application level:
 
 1. **Gate 1: Dry-Run Plan (`POST /api/runs`)**
    Creates a plan in `PLAN_READY` status with masked phone numbers. Places zero calls and consumes zero credits.
 2. **Gate 2: Explicit Consent (`POST /api/runs/{id}/live`)**
-   Requires human consent before sequential dialing begins.
+   Requires explicit operator consent before sequential dialing begins.
 
 Every phone call enforces:
 - **AI disclosure first:** The assistant identifies as an AI within the first five seconds.

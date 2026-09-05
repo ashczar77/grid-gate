@@ -16,7 +16,7 @@ public final class PhoneMasker {
             return "***";
         }
 
-        // Keep first 5 chars (e.g. "+1415") and last 3 chars (e.g. "001"), mask the middle
+        // Keep first 5 chars (e.g. "+1415") and last 3 chars (e.g. "101"), mask the middle
         int len = cleaned.length();
         String prefix = cleaned.substring(0, Math.min(5, len - 3));
         String suffix = cleaned.substring(len - 3);

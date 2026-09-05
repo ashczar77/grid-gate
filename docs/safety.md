@@ -1,6 +1,8 @@
 # Safety and Consent Architecture
 
-GridGate coordinates automated phone calls to local service providers during power emergencies. Because outbound phone calls interact with human business owners, safety, transparency, and consent are enforced at the architectural level.
+> **Scope & Prototype Notice:** GridGate is an experimental local reference workbench built for evaluation and demonstration. In this prototype stage, execution, stream, cancellation, and actuator endpoints are unauthenticated, webhook signature validation is optional for local development, and outbound calls should only be triggered with trusted credentials in local environments.
+
+GridGate coordinates automated phone calls to local service providers during power emergencies. Because outbound phone calls interact with human business owners, safety, transparency, and consent are enforced at the application level.
 
 ## 1. Two-Gate Execution Model
 
@@ -42,9 +44,9 @@ Every call placed by GridGate begins with an explicit AI disclosure statement.
 Example task prompt opening:
 > "IMPORTANT: You are an AI assistant calling on behalf of a customer. Identify yourself as an AI at the very start of the call."
 
-## 3. Privacy and Phone Number Masking (POPIA)
+## 3. Privacy and Phone Number Masking
 
-To protect personal identifiable information (PII) under South Africa's Protection of Personal Information Act (POPIA):
+To protect personal identifiable information (PII):
 
 - All provider phone numbers returned by public API endpoints (`GET /api/runs`, `GET /api/runs/{id}`, SSE streams) are masked (for example: `+1415****101`).
 - E.164 phone numbers are only stored internally to allow CALL-E dispatch.

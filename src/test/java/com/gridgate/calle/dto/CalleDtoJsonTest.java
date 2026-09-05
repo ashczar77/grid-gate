@@ -26,7 +26,7 @@ class CalleDtoJsonTest {
     void serializesCreateCallRequestWithSnakeCaseKeys() throws Exception {
         CreateCallRequest request = new CreateCallRequest(
                 "Call +14155550101 and ask about generator availability.",
-                List.of(new RecipientInput(List.of("+14155550101"), "ZA", "en-ZA")),
+                List.of(new RecipientInput(List.of("+14155550101"), "US", "en-US")),
                 Map.of("type", "object"),
                 Map.of("type", "object"),
                 Map.of("gridgate_run_id", "run-123"),

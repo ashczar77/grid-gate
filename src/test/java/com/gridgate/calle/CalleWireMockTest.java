@@ -96,7 +96,7 @@ class CalleWireMockTest {
 
         CreateCallRequest request = new CreateCallRequest(
                 "Check outage availability",
-                List.of(new RecipientInput(List.of("+14155550101"), "ZA", "en-ZA")),
+                List.of(new RecipientInput(List.of("+14155550101"), "US", "en-US")),
                 null,
                 RecipientResultSchemas.recipientResultSchema(),
                 Map.of(

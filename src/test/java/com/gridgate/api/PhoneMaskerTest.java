@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Test;
 class PhoneMaskerTest {
 
     @Test
-    void masksStandardE164SouthAfricanPhone() {
+    void masksStandardE164Phone() {
         assertEquals("+1415****101", PhoneMasker.mask("+14155550101"));
-        assertEquals("+1415****102", PhoneMasker.mask("+14155550101"));
+        assertEquals("+1415****102", PhoneMasker.mask("+14155550102"));
     }
 
     @Test
